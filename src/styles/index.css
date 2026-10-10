@@ -1,0 +1,564 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ══════════════════════════════════════════════════════════════════════════
+   语义化主题变量（深色 / 浅色两套）
+   ──────────────────────────────────────────────────────────────────────────
+   设计约定：
+   1. 组件里禁止再写裸色值（#0D0D0D / white/10 / neutral-400 …），
+      一律用 tailwind.config.js 里注册的语义色名（bg-card / border-line-3 /
+      text-fg-4 …），这些色名指向下面这批变量，切主题只换变量。
+   2. 深色一列的取值 = 改造前组件里的原值逐一搬过来（#000/#0D0D0D/#171717、
+      white/0.03~0.45、neutral-100~600 …），所以深色观感与改造前完全一致。
+   3. 浅色一列不是深色的简单反相：底色靠「页面浅灰 + 卡片纯白 + 极轻边框」
+      分层次；文字取近黑到中灰的 7 档，正文档位在白底上都 ≥ 4.5:1（WCAG AA）。
+   4. Recharts 的 stroke/fill 必须是真实色值字符串、拿不到 CSS 变量，
+      那部分色板在 src/data/theme.ts 里按主题返回（同一套配色决策，两处保持同源）。
+   ══════════════════════════════════════════════════════════════════════════ */
+
+/* ── 深色（默认，与改造前逐值一致；:root 兜底防止属性还没写上时闪白） ────── */
+:root,
+:root[data-theme='dark'] {
+  color-scheme: dark;
+
+  /* 层级底色：页面 → 卡片 → 卡片内嵌区（表头等）→ 浮层 */
+  --surface-page: #000000;
+  --surface-card: #0d0d0d;
+  --surface-inset: #171717;
+  --surface-overlay: #171717;
+  /* 卡片底色的 85% 版本：横向滚动区右侧渐隐蒙层用（渐变必须是真实色值） */
+  --surface-card-soft: rgba(13, 13, 13, 0.85);
+  /* 图表 tooltip：几乎不透明的卡片底，压住下面的曲线 */
+  --surface-tooltip: rgba(13, 13, 13, 0.95);
+  /* 浮层/弹层遮罩 */
+  --scrim: rgba(0, 0, 0, 0.8);
+  /* 卡片投影：深色底上禁止投影（品牌规范），浅色底才需要 */
+  --card-shadow: none;
+
+  /* 状态填充（原 white/0.03 → 0.25，序号越大越强） */
+  --fill-1: rgba(255, 255, 255, 0.03);
+  --fill-2: rgba(255, 255, 255, 0.05);
+  --fill-3: rgba(255, 255, 255, 0.1);
+  --fill-4: rgba(255, 255, 255, 0.14);
+  --fill-5: rgba(255, 255, 255, 0.25);
+  --fill-hover: rgba(255, 255, 255, 0.04);
+
+  /* 分割线 / 边框（原 white/0.05 → 0.45，序号越大越实） */
+  --line-1: rgba(255, 255, 255, 0.05);
+  --line-2: rgba(255, 255, 255, 0.08);
+  --line-3: rgba(255, 255, 255, 0.1);
+  --line-4: rgba(255, 255, 255, 0.12);
+  --line-5: rgba(255, 255, 255, 0.15);
+  --line-6: rgba(255, 255, 255, 0.2);
+  --line-7: rgba(255, 255, 255, 0.25);
+  --line-8: rgba(255, 255, 255, 0.45);
+
+  /* 文字：strong = 标题，1~6 依次转弱（原 neutral-100 → neutral-600） */
+  --text-strong: #ffffff;
+  --text-1: #f5f5f5;
+  --text-2: #e5e5e5;
+  --text-3: #d4d4d4;
+  --text-4: #a3a3a3;
+  --text-5: #737373;
+  --text-6: #525252;
+
+  /* 品牌红 Blaze：实底 / hover / 实底上的文字 / 低强度底 / 红色文字 / 滚动条 */
+  --accent: #f1204a;
+  --accent-hover: rgba(241, 32, 74, 0.85);
+  --accent-fg: #ffffff;
+  --accent-soft: rgba(241, 32, 74, 0.08);
+  --accent-text: #f8657f;
+  --accent-thumb: rgba(241, 32, 74, 0.75);
+  --accent-ring: rgba(241, 32, 74, 0.6);
+
+  /* 信息角标（数据待接入等，Shimmer/Glint） */
+  --info-fg: #baf6f0;
+  --info-dot: #2dccd3;
+  --info-border: rgba(45, 204, 211, 0.35);
+  --info-bg: rgba(45, 204, 211, 0.1);
+
+  /* 失败提示（Blaze 低强度） */
+  --danger-border: rgba(241, 32, 74, 0.4);
+  --danger-bg: rgba(241, 32, 74, 0.1);
+
+  /* 吸附列右侧的渐隐投影（日历首列） */
+  --sticky-fade: rgba(0, 0, 0, 0.4);
+  /* 图例色块描边：深色底上不需要，透明即可 */
+  --swatch-border: transparent;
+
+  /* 滚动条 */
+  --scrollbar-track: rgba(255, 255, 255, 0.04);
+  --scrollbar-thumb: rgba(255, 255, 255, 0.18);
+  --scrollbar-thumb-hover: rgba(241, 32, 74, 0.6);
+
+  /*
+    「强调」滤镜系数：深色底上 hover / 选中靠提亮（brightness > 1），
+    取值与改造前组件里写死的 brightness-125、brightness-[1.18] saturate-[1.1] 一致。
+  */
+  --emph-brightness: 1.25;
+  --heat-emph-brightness: 1.18;
+  --heat-emph-saturate: 1.1;
+}
+
+/* ── 浅色（本版严格按 TT4B 官方色板重建） ─────────────────────────────────
+   规则：
+   1. 底色 / 填充 / 分割线 / 文字**只能是中性**（纯白 #FFFFFF、纯中性灰 R=G=B、
+      纯黑 #000000 的透明度），一律不染色相 —— 上一版这些值统一用了一支带蓝的
+      冷黑 rgba(15,18,25)（#0F1219，色相 220° 的蓝黑）与冷灰 #F7F7F8 / #F1F2F4 /
+      #5B5B62，品牌色板里既没有蓝也没有冷灰，这是「整屏发闷、隐隐发蓝」的来源；
+   2. 有色相的部分（accent / info / danger）**只能来自品牌色板**：
+      Blaze #F1204A（红）与 Glint #2DCCD3（青）—— 正好是官方 Hero Pairing；
+   3. 白底上的文字按 AA 4.5:1 卡，色块 / 描边 / 圆点按图形 3:1 卡。
+   ──────────────────────────────────────────────────────────────────────── */
+:root[data-theme='light'] {
+  color-scheme: light;
+
+  /*
+    层级：页面浅中性灰 → 卡片 TikTok White → 表头灰，卡片靠「比页面更亮 +
+    极轻边框 + 一层几乎看不见的黑色投影」浮起来。三档全部 R=G=B（无色相）。
+  */
+  --surface-page: #f5f5f5;
+  --surface-card: #ffffff;
+  --surface-inset: #efefef;
+  /* 浮层保持纯白 + 投影：浅色底上再压灰会和卡片糊在一起，靠投影建立层级 */
+  --surface-overlay: #ffffff;
+  --surface-card-soft: rgba(255, 255, 255, 0.85);
+  --surface-tooltip: rgba(255, 255, 255, 0.96);
+  /* 遮罩：品牌原色 TikTok Black 45%（上一版是带蓝的 #0F1219） */
+  --scrim: rgba(0, 0, 0, 0.45);
+  /* 卡片投影：品牌原色 TikTok Black 的极低透明度（上一版带蓝的 #101828） */
+  --card-shadow: 0 1px 2px rgba(0, 0, 0, 0.05), 0 1px 3px rgba(0, 0, 0, 0.07);
+
+  /*
+    状态填充：**品牌原色 TikTok Black** 的低透明度（上一版是冷黑 15,18,25）。
+    透明度整体比深色版低（黑色叠白底的视觉重量高于白色叠黑底）。
+  */
+  --fill-1: rgba(0, 0, 0, 0.025);
+  --fill-2: rgba(0, 0, 0, 0.045);
+  --fill-3: rgba(0, 0, 0, 0.07);
+  --fill-4: rgba(0, 0, 0, 0.1);
+  --fill-5: rgba(0, 0, 0, 0.22);
+  --fill-hover: rgba(0, 0, 0, 0.035);
+
+  /* 分割线 / 边框：同样是 TikTok Black 的低透明度，透明度档位与上一版一致 */
+  --line-1: rgba(0, 0, 0, 0.05);
+  --line-2: rgba(0, 0, 0, 0.07);
+  --line-3: rgba(0, 0, 0, 0.09);
+  --line-4: rgba(0, 0, 0, 0.1);
+  --line-5: rgba(0, 0, 0, 0.13);
+  --line-6: rgba(0, 0, 0, 0.16);
+  --line-7: rgba(0, 0, 0, 0.18);
+  --line-8: rgba(0, 0, 0, 0.34);
+
+  /*
+    文字 7 档，**全部纯中性**（上一版 7 档全部带蓝：#0F0F10~#94949C 的 B 通道
+    都比 R 高）。strong 直接用 **品牌原色 TikTok Black #000000**。
+    白底对比度：strong 21.0:1、1 16.1:1、2 12.5:1、3 9.6:1、4 6.9:1、5 5.0:1
+    —— 正文档位（4/5）都过 WCAG AA 4.5:1；6 为 3.0:1，只用在「待接入」这类
+    失效态与装饰文字（AA 大字档 / 图形档）。
+  */
+  --text-strong: #000000;
+  --text-1: #212121;
+  --text-2: #343434;
+  --text-3: #454545;
+  --text-4: #5a5a5a;
+  --text-5: #707070;
+  --text-6: #949494;
+
+  /*
+    强调色 = 品牌原色 Blaze #F1204A 家族（浅色模式下所有可点元素、选中态、
+    focus 环、主题切换按钮都收口到这一支）：
+    - 实底 --accent 沿 Blaze 色相（347.9°）压深到 #E90F3B：白字 4.57:1 过 AA
+      （Blaze 原色配白字只有 4.16:1，按钮文案会不达标），观感仍是 TikTok 红；
+    - hover / 红色文字 --accent-text 再深一档 #BD0C30（白底 6.44:1）；
+    - 所有**半透明**档位（soft / thumb / ring）直接用 **Blaze 原色**加透明度
+      —— 薄雾叠白底本就会变浅，不需要预先压深。
+  */
+  --accent: #e90f3b;
+  --accent-hover: #bd0c30;
+  --accent-fg: #ffffff;
+  --accent-soft: rgba(241, 32, 74, 0.07);
+  --accent-text: #bd0c30;
+  --accent-thumb: rgba(241, 32, 74, 0.7);
+  --accent-ring: rgba(241, 32, 74, 0.55);
+
+  /*
+    信息角标 = 品牌原色 Glint #2DCCD3 家族（与 Blaze 构成官方 Hero Pairing）。
+    Glint 原色在白底只有 1.96:1，做不了文字与圆点，所以：
+    - 文字沿 182.5° 压深（info 6.06:1，过 AA）；
+    - 圆点是图形，压到 #1CA4A9（3.03:1，过图形门槛 3:1）；
+    - 底色 / 描边用 **Glint 原色**加透明度（薄雾）。
+    （原先并列的 LIVE 一组变量已随「LIVE 小标全删」一并移除。）
+  */
+  --info-fg: #186d71;
+  --info-dot: #1ca4a9;
+  --info-border: rgba(45, 204, 211, 0.45);
+  --info-bg: rgba(45, 204, 211, 0.12);
+
+  /* 失败提示：品牌原色 Blaze 低透明度 */
+  --danger-border: rgba(241, 32, 74, 0.35);
+  --danger-bg: rgba(241, 32, 74, 0.06);
+
+  --sticky-fade: rgba(0, 0, 0, 0.1);
+  /* 浅底上纯色图例块（如 Glow 淡黄档）与白底对比不足，补一圈极细黑描边勾出边界 */
+  --swatch-border: rgba(0, 0, 0, 0.16);
+
+  --scrollbar-track: rgba(0, 0, 0, 0.06);
+  --scrollbar-thumb: rgba(0, 0, 0, 0.22);
+  --scrollbar-thumb-hover: rgba(241, 32, 74, 0.55);
+
+  /*
+    浅色底上「提亮」等于把淡彩块洗成白色（强调反而更弱），
+    所以强调方向反转成压深一点点，饱和度略升以保留色相辨识度。
+  */
+  --emph-brightness: 0.95;
+  --heat-emph-brightness: 0.94;
+  --heat-emph-saturate: 1.15;
+}
+
+@layer base {
+  :root {
+    --radius: 0.5rem;
+    --sidebar-background: 0 0% 98%;
+    --sidebar-foreground: 240 5.3% 26.1%;
+    --sidebar-primary: 240 5.9% 10%;
+    --sidebar-primary-foreground: 0 0% 98%;
+    --sidebar-accent: 240 4.8% 95.9%;
+    --sidebar-accent-foreground: 240 5.9% 10%;
+    --sidebar-border: 220 13% 91%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+  .dark {
+    --sidebar-background: 240 5.9% 10%;
+    --sidebar-foreground: 240 4.8% 95.9%;
+    --sidebar-primary: 224.3 76.3% 48%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 240 3.7% 15.9%;
+    --sidebar-accent-foreground: 240 4.8% 95.9%;
+    --sidebar-border: 240 3.7% 15.9%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+}
+
+/* ── TikTok for Business 品牌字体（TikTok Sans） ─────────────────────────── */
+@font-face {
+  font-family: 'TikTok Sans Display';
+  src: url('../assets/fonts/TikTok-Sans-Display-Bold.woff2') format('woff2');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'TikTok Sans Display';
+  src: url('../assets/fonts/TikTok-Sans-Display-Medium.woff2') format('woff2');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'TikTok Sans Text';
+  src: url('../assets/fonts/TikTok-Sans-Text-Regular.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'TikTok Sans Text';
+  src: url('../assets/fonts/TikTok-Sans-Text-Medium.woff2') format('woff2');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'TikTok Sans Text';
+  src: url('../assets/fonts/TikTok-Sans-Text-Bold.woff2') format('woff2');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* ── 中文品牌字体（思源黑体 CN，已子集化：GB2312 全字集 + 拉丁 + 中英标点） ──── */
+@font-face {
+  font-family: 'Source Han Sans CN';
+  src: url('../assets/fonts/SourceHanSansCN-Regular.subset.woff2')
+    format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Source Han Sans CN';
+  src: url('../assets/fonts/SourceHanSansCN-Bold.subset.woff2') format('woff2');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+/*
+  品牌字体栈：拉丁字符命中 TikTok Sans，中文按 fallback 落到思源黑体 CN，
+  思源黑体排在 PingFang SC 之前，保证 macOS 上中文也走品牌字体而不是系统字体。
+*/
+:root {
+  --brand-font: 'TikTok Sans Text', 'TikTok Sans Display', 'Source Han Sans CN',
+    'PingFang SC', 'Noto Sans SC', 'Hiragino Sans GB', 'Microsoft YaHei', Arial,
+    sans-serif;
+}
+
+html,
+body {
+  padding: 0;
+  margin: 0;
+  font-family: var(--brand-font);
+}
+
+/* 表单控件与 SVG 文本（Recharts 坐标轴 / 图例 / tooltip）不会自动继承，显式兜底 */
+button,
+input,
+select,
+textarea,
+th,
+td,
+svg text,
+svg tspan {
+  font-family: var(--brand-font);
+}
+
+p {
+  margin: 0;
+}
+
+* {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  box-sizing: border-box;
+}
+
+/* 脚手架遗留的通用容器类（当前页面未使用）。原本写死了 #213047 / #f7f8fc
+   两个带蓝色相的值，为保证「全页色值 grep 无蓝」，改为走主题语义变量。 */
+.page-container {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: 24px;
+  color: var(--text-2);
+  background: var(--surface-page);
+}
+
+.page-container h2 {
+  font-size: 1.5rem;
+  font-weight: 650;
+  margin: 0 0 1.5rem;
+}
+
+/* ── 看板页面底色与横向滚动条（颜色统一走主题变量） ─────────────────────── */
+html,
+body {
+  background: var(--surface-page);
+}
+
+/*
+  滚动条：原来只在 `.dark` 子树内生效，现在统一挂全局并取变量，
+  深色下取值与改造前完全一致，浅色下换成冷黑半透明轨道 + 滑块。
+*/
+.cal-scroll::-webkit-scrollbar,
+::-webkit-scrollbar {
+  height: 8px;
+  width: 8px;
+}
+
+.cal-scroll::-webkit-scrollbar-track,
+::-webkit-scrollbar-track {
+  background: var(--scrollbar-track);
+}
+
+.cal-scroll::-webkit-scrollbar-thumb,
+::-webkit-scrollbar-thumb {
+  background: var(--scrollbar-thumb);
+  border-radius: 999px;
+}
+
+.cal-scroll::-webkit-scrollbar-thumb:hover,
+::-webkit-scrollbar-thumb:hover {
+  background: var(--scrollbar-thumb-hover);
+}
+
+/* 日历用自绘滚动条（可拖动），隐藏原生滚动条避免出现两条 */
+.cal-scroll::-webkit-scrollbar {
+  height: 0;
+  width: 0;
+}
+
+.cal-scroll {
+  scrollbar-width: none;
+}
+
+/*
+  图例 / 阶段色块的描边：用 outline + 负 offset 而不是 border，
+  这样不占布局、深色下变量是 transparent，色块尺寸与观感与改造前完全一致。
+*/
+.swatch-ring {
+  outline: 1px solid var(--swatch-border);
+  outline-offset: -1px;
+}
+
+/*
+  hover / 选中的「强调」滤镜：方向由主题变量决定（深色提亮、浅色压深），
+  组件里不再写死 brightness-125 / brightness-[1.18]。
+*/
+.emph-hover:hover {
+  filter: brightness(var(--emph-brightness));
+}
+
+.heat-emph {
+  filter: brightness(var(--heat-emph-brightness))
+    saturate(var(--heat-emph-saturate));
+}
+
+/*
+  横向滚动区右侧的渐隐蒙层：渐变色不能用 Tailwind 的 from-card/85
+  （语义色是完整色值、加透明度修饰符会失效），直接在 CSS 里用变量拼渐变。
+*/
+.scroll-fade-right {
+  background-image: linear-gradient(
+    to left,
+    var(--surface-card),
+    var(--surface-card-soft) 55%,
+    transparent
+  );
+}
+
+/*
+  品牌滑杆（气泡图「气泡数量」用）：原生 input[type=range] 的默认外观在深色底上
+  是一条灰白细线 + 系统蓝滑块，与页面完全脱节，所以这里自定义两套伪元素
+  （WebKit / Firefox 各一套，写法不能合并）。
+  取舍：轨道保持**整条统一灰底**（不做左侧红色填充）——填充色会和滑块的品牌红
+  连成一片，反而看不清当前滑块位置；当前值本来就以数字形式写在滑杆左侧。
+*/
+.range-brand {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 18px;
+  background: transparent;
+  cursor: pointer;
+}
+.range-brand::-webkit-slider-runnable-track {
+  height: 6px;
+  border-radius: 9999px;
+  background: var(--fill-3);
+}
+.range-brand::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  margin-top: -5px;
+  height: 16px;
+  width: 16px;
+  border: none;
+  border-radius: 9999px;
+  background: var(--accent);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
+  transition: transform 0.12s ease;
+}
+.range-brand:hover::-webkit-slider-thumb,
+.range-brand:focus-visible::-webkit-slider-thumb {
+  transform: scale(1.12);
+}
+.range-brand::-moz-range-track {
+  height: 6px;
+  border-radius: 9999px;
+  background: var(--fill-3);
+}
+.range-brand::-moz-range-thumb {
+  height: 16px;
+  width: 16px;
+  border: none;
+  border-radius: 9999px;
+  background: var(--accent);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
+}
+.range-brand:focus-visible {
+  outline: none;
+}
+.range-brand:focus-visible::-moz-range-thumb {
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+
+.demo-heading {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 16px 24px;
+}
+.demo-title { font-size: clamp(20px, 2.5vw, 40px); text-wrap: balance; }
+.demo-subtitle { font-size: clamp(12px, 1.35vw, 21px); }
+.demo-notice {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-top: 20px;
+  padding: 20px 24px;
+  border: 2px solid #F1204A;
+  border-radius: 14px;
+  background: #B91035;
+  color: #FFFFFF;
+}
+.demo-notice p {
+  margin: 0;
+  font-family: 'Microsoft YaHei', 'Source Han Sans CN', sans-serif;
+  font-size: clamp(20px, 1.8vw, 28px);
+  font-weight: 700;
+  line-height: 1.65;
+}
+.demo-inline-notice {
+  padding: 10px 14px;
+  border: 1px solid #F1204A;
+  border-radius: 10px;
+  color: #FFFFFF;
+  background: #B91035;
+  font-size: 17px;
+  font-weight: 700;
+  line-height: 1.6;
+}
+.demo-heading-tools { display: flex; flex-direction: column; align-items: end; gap: 10px; text-align: right; }
+.demo-player-frame { height: min(76dvh, 720px); max-width: min(52%, 520px); }
+.demo-icon-button {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border: 1px solid var(--line-5);
+  border-radius: 50%;
+  color: var(--text-2);
+  background: var(--fill-2);
+  cursor: pointer;
+}
+button:focus-visible, a:focus-visible, input:focus-visible, [role='button']:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
+.demo-player:fullscreen { padding: 16px; }
+@media (max-width: 1100px) {
+  .demo-heading { grid-template-columns: minmax(0, 1fr); }
+  .demo-heading-tools { flex-direction: row; align-items: center; justify-content: space-between; }
+}
+@media (max-width: 639px) {
+  .demo-notice { align-items: flex-start; gap: 10px; padding: 16px; }
+  .demo-notice svg { margin-top: 3px; }
+  .demo-title { font-size: clamp(17px, 4.6vw, 28px); letter-spacing: 0; }
+  .demo-player-frame { height: 52dvh; min-height: 300px; max-width: 100%; }
+  .demo-material-dialog { max-height: 92dvh; }
+  .demo-heading-tools { gap: 8px; }
+  .demo-heading-tools > div { font-size: 10px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { scroll-behavior: auto !important; transition-duration: 0.01ms !important; }
+}

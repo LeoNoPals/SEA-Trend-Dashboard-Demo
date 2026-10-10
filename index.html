@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="en" data-theme="dark" class="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="SEA Trend Calendar and Category Insights. Interactive demo with fictional business metrics." />
+    <meta name="referrer" content="no-referrer" />
+    <title>SEA Trend Calendar | Interactive Demo</title>
+    <script>
+      (() => {
+        let theme = 'dark';
+        try {
+          const chosen = new URLSearchParams(location.search).get('theme') || localStorage.getItem('sea-demo-theme');
+          if (chosen === 'light' || chosen === 'dark') theme = chosen;
+        } catch {}
+        document.documentElement.dataset.theme = theme;
+        document.documentElement.classList.toggle('dark', theme === 'dark');
+      })();
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
