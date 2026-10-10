@@ -20,10 +20,7 @@ const SelectTrigger = React.forwardRef<
     ref={ref}
     className={cn(
       // focus 态不用 ring：ring 会带 ring-offset 白圈，在黑底上就是一条白线；
-      // 改成把边框换成品牌色 Blaze 的细描边，键盘可达性保留、深色底上也干净。
-      // 原来 focus 边框写死 #F1204A：深色下没问题，但浅色白底上 Blaze 原色偏亮。
-      // 收口到语义变量 border-accent —— 深色仍解析为 Blaze #F1204A（值不变），
-      // 浅色解析为沿 Blaze 色相压深、白底过 AA 的 #E90F3B。
+      // 改成语义强调色细描边，保留键盘可达性和深浅主题对比度。
       // 说明：border-zinc-200 / placeholder:text-zinc-500 这几个基础类在浅色下
       // 已被调用方传入的 border-line-5 / text-fg-2 覆盖（未生效），dark: 分支为
       // 保证深色观感一字不改，原样保留。
@@ -130,7 +127,7 @@ const SelectItem = React.forwardRef<
     ref={ref}
     className={cn(
       // 浅色下的 hover / focus 底原本写死 zinc-100 / zinc-900（zinc 是带蓝的冷灰，
-      // 不在 TT4B 品牌色板里），收口到语义变量 bg-fill-3 / text-fg（纯中性）；
+      // 收口到语义变量 bg-fill-3 / text-fg（纯中性）；
       // 深色的 dark: 覆盖保持原样不动，观感与改动前一致。
       'relative flex w-full cursor-default select-none items-center rounded-lg py-1.5 pl-2 pr-8 text-sm outline-none focus:bg-fill-3 focus:text-fg data-[disabled]:pointer-events-none data-[disabled]:opacity-50 dark:focus:bg-zinc-800 dark:focus:text-zinc-50',
       className,

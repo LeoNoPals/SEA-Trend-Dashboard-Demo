@@ -423,7 +423,7 @@ export function SegmentedToggle<T extends string>({
 }
 
 /**
- * 分页按钮：**正圆**、等径，当前页 Blaze 实底高亮，其余浅描边空心。
+ * 分页按钮：**正圆**、等径，当前页使用强调色实底，其余浅描边空心。
  *
  * 从「首页 / 上一页」这种文字按钮换成圆形图标按钮的原因：
  * 文字按钮宽度各不相同（两字 vs 三字 vs 一位数 vs 三位数），一排下来参差不齐，
@@ -715,7 +715,7 @@ export function EmptyBlock({
   );
 }
 
-/** 飞书两类权限失败与通用失败的中文引导 */
+/** Generic data loading failure state. */
 export function FailureBlock({
   error,
   sourceUrl,

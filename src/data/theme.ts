@@ -1,81 +1,22 @@
-/**
- * TikTok for Business 品牌视觉体系（深色 + 浅色两套色板）。
- * 颜色全部取自 TT4B 品牌规范：
- * - Core colors：TikTok Black #000000、TikTok White #FFFFFF、Glint #2DCCD3、Blaze #F1204A
- * - Secondary colors：Thrive #033624、Shimmer #BAF6F0、Dawn #EDBBE8、Ember #4A0505、
- *   Glow #FBEB35、Muse #EDD4B2
- * 配色遵循品牌 pairing 规则（Hero：Blaze × Glint；Tertiary：Blaze/Glint × 辅助色）。
- *
- * ── 本文件与 CSS 变量的分工 ────────────────────────────────────────────────
- * DOM 上能用 CSS 的地方（底色 / 文字 / 边框）一律走 src/routes/index.css 的
- * `data-theme` 语义变量；这里只保留 **必须是真实色值字符串** 的部分 ——
- * Recharts 的 stroke/fill、内联 style 里的数据可视化色值等（拿不到 var()）。
- * 所以下面每个与主题相关的导出都是 `getXxx(mode)` 形式，由组件通过
- * `useThemeMode()` 取到当前主题后再取色板；同一主题下返回同一个对象引用，
- * 不会破坏 `React.memo` 的浅比较。
- *
- * ── 浅色色板的总体决策（本版：严格按 TT4B 官方色板重建）────────────────────
- * 品牌色板的结构特点是「只有极饱和核心色 + 极浅粉彩 / 极深墨色两端，没有中间调」。
- * 上一版浅色是把深色色值「提亮 / 压深一档」硬凑的，产出了一批品牌色板里不存在的
- * 杂色（最扎眼的是 #3F6ACF 蓝 —— 品牌色板里根本没有蓝色），这才是「配色奇怪」的
- * 根因。本版重建时守住四条硬规则：
- *
- * 1. **色相锁定**：浅色所有配色的色相只能来自品牌色板的 7 个色相 ——
- *    Blaze 347.9° / Ember 0° / Muse 34.6° / Glow 55.2° / Thrive 158.8° /
- *    Shimmer 174.0° / Glint 182.5° / Dawn 306.0°，外加黑 / 白 / 中性灰。
- *    **严禁出现品牌色板里没有的色相，尤其是蓝色（200°~270°）。**
- * 2. **只调明度 / 饱和度，不改色相**：品牌色在白底上对比度不够时（Shimmer 1.20:1、
- *    Glow 1.23:1、Muse 1.43:1、Dawn 1.63:1、Glint 1.96:1 全部不能当线 / 当字），
- *    沿该色的色相往深处取一档；极深色（Thrive 13.49:1、Ember 15.97:1）当浅底或
- *    当中间调时往浅处取。每个派生色下面都注明「沿 Xxx 色相压深 / 提亮」。
- * 3. **能用品牌原色就直接用**：白底 #FFFFFF、主文字 #000000、数据可视化主色
- *    Blaze #F1204A、色块底 Shimmer #BAF6F0 / Glint #2DCCD3 / Glow #FBEB35、
- *    深色文字锚点 Thrive #033624 / Ember #4A0505 全部是品牌原色，未做任何微调。
- * 4. **遵循官方 Pairings**：色块底 + 其上文字的搭配落在官方 pairing 上 ——
- *    爆发期＝Ember + Blaze（Blaze Tertiary）、清仓期＝Thrive + Glint（Secondary）
- *    与 Shimmer + Glint（Glint Tertiary）、备货期＝Glow + Blaze 的暖感延伸。
- *
- * ── 可读性门槛（两档，不要混用）──────────────────────────────────────────
- * - **色块上的文字**（热力图单元格 / 节日 pill / 阶段标注）：文字 vs 底色 ≥ 4.5:1；
- * - **非文本图形**（折线 / 柱体 / 气泡 / 图例色块 / 参考线）：≥ 3:1 即可。
- *   WCAG 里 4.5:1 是文本门槛、3:1 才是图形门槛；把图形也按文本门槛压深，白底上
- *   就会得到一屏又重又闷的深浊色（这是上一版的实际问题）。
- * - 正文 / 坐标轴 / 数据标签走 CSS 语义变量或 ColorTokens.axis / muted，
- *   白底 ≥ 4.5:1，与「线条色」是两套独立取值，提亮线条不会拉低任何文字对比度。
- *
- * ── 本轮「深浅配色总原则」（用户口径：深色更深、浅色更浅）──────────────────
- * 1. **热力图色阶**：浅色的备货（Glow 黄）与清仓（Glint 青）两条 5 档色阶整体
- *    「再浅一档」（爆发红按要求原样不动）；深色三条色阶整体「再深一档」
- *    （往卡片黑底多压一个档距，5 档跨度不变、层级差异保持）。
- * 2. **分类色板（CBEC L1）与分国折线色**：浅色**直接复用深色模式的品牌原色**，
- *    不再单独维护一套「压深过的中间调」（那套在白底上显得脏重）。
- *    色块 / 折线一律是**纯品牌原色单层渲染**：不描边、不加深、不外发光。
- *    Shimmer / Glow / Muse / Dawn 在白底上的对比度只有 1.2~1.6:1，这是
- *    用户明确知晓并确认的设计取舍，代码里不做任何「可见性补偿」。
- *    - 唯一无法照搬的是 TikTok White：白底上 1:1、彻底不可见，
- *      按「深色主线＝全图最重的锚定色」的同构关系换成品牌原色 TikTok Black。
- */
 
-/** 当前主题（真值挂在 `<html data-theme>` 上，见 src/hooks/useTheme.tsx） */
+
+
 export type ThemeMode = 'dark' | 'light';
 
-/** TT4B 品牌色板（唯一色值来源，禁止在组件里另造颜色） */
-export const BRAND = {
+
+export const PALETTE = {
   black: '#000000',
   white: '#FFFFFF',
-  glint: '#2DCCD3',
-  blaze: '#F1204A',
-  thrive: '#033624',
-  shimmer: '#BAF6F0',
-  dawn: '#EDBBE8',
-  ember: '#4A0505',
-  glow: '#FBEB35',
-  muse: '#EDD4B2',
+  accentCyan: '#2DCCD3',
+  primaryRed: '#F1204A',
+  deepGreen: '#033624',
+  softCyan: '#BAF6F0',
+  softPink: '#EDBBE8',
+  deepRed: '#4A0505',
+  highlightYellow: '#FBEB35',
+  warmNeutral: '#EDD4B2',
 } as const;
 
-/* ------------------------------------------------------------------ *
- * 色值工具（纯函数，与主题无关）
- * ------------------------------------------------------------------ */
 
 function clamp01(v: number): number {
   return Math.min(1, Math.max(0, v));
@@ -109,7 +50,7 @@ export function mixHex(from: string, to: string, t: number): string {
   return `#${out.map(v => v.toString(16).padStart(2, '0')).join('')}`;
 }
 
-/** 给品牌色加透明度：深色底上做低强度底色 / 描边 */
+/** 给界面色加透明度：深色底上做低强度底色 / 描边 */
 export function withAlpha(hex: string, a: number): string {
   const [r, g, b] = hexToRgb(hex);
   return `rgba(${r}, ${g}, ${b}, ${a})`;
@@ -203,7 +144,7 @@ function brighten(hex: string, factor: number): string {
 }
 
 /**
- * 浅色底专用「色墨化」：把品牌色压到指定明度（默认 32%）并保底饱和度，
+ * 浅色底专用「色墨化」：把界面色压到指定明度（默认 32%）并保底饱和度，
  * 得到白底上可读的同色相深色（文字 / 描边用）。
  * 无彩色（白 / 灰）不能按色相压深，否则会凭空长出色相，直接落到中性深灰。
  */
@@ -226,15 +167,15 @@ export type ColorTokens = {
   surface: string;
   /** 卡片内嵌区（表头）背景 */
   surfaceStrong: string;
-  /** 主色：Blaze */
+  /** 主色：primary red */
   primary: string;
-  /** 强调色：Glint */
+  /** 强调色：accent cyan */
   accent: string;
-  /** Glint 深一档：辅助线用 */
+  /** accent cyan 深一档：辅助线用 */
   accentDeep: string;
-  /** 备货期：Glow */
+  /** 备货期：highlight yellow */
   warn: string;
-  /** 负向：Blaze */
+  /** 负向：primary red */
   alert: string;
   /** 中性灰：对照组、常规期、大盘均值线 */
   base: string;
@@ -252,25 +193,25 @@ const COLORS_BY_MODE: Record<ThemeMode, ColorTokens> = {
     page: '#000000',
     surface: '#0D0D0D',
     surfaceStrong: '#171717',
-    primary: BRAND.blaze,
-    accent: BRAND.glint,
+    primary: PALETTE.primaryRed,
+    accent: PALETTE.accentCyan,
     accentDeep: '#1E9CA1',
-    warn: BRAND.glow,
-    alert: BRAND.blaze,
+    warn: PALETTE.highlightYellow,
+    alert: PALETTE.primaryRed,
     base: '#737373',
     muted: '#A3A3A3',
     grid: 'rgba(255,255,255,0.10)',
     axis: '#A3A3A3',
   },
   /**
-   * 浅色（本版全部沿品牌色相推导，逐值标注来源）：
+   * 浅色（本版全部沿界面色相推导，逐值标注来源）：
    * - page / surfaceStrong 用**纯中性灰**（R=G=B），上一版 #F7F7F8 / #F1F2F4 带蓝味，
    *   是「一屏发闷」的隐形来源之一；中性灰属中性色，不算越界，但绝不能染色相；
-   * - primary / alert 直接用 **品牌原色 Blaze #F1204A**（白底 4.16:1，作为柱体 /
+   * - primary / alert 直接用 **界面原色 primary red #F1204A**（白底 4.16:1，作为柱体 /
    *   气泡 / 参考线这类非文本图形已过 3:1 门槛，不需要压深）；
-   * - accent 沿 Glint 色相（182.5°）压深到 #1CA4A9（白底 3.03:1）：Glint 本色
+   * - accent 沿 accent cyan 色相（182.5°）压深到 #1CA4A9（白底 3.03:1）：accent cyan 本色
    *   #2DCCD3 只有 1.96:1，做不了参考线；accentDeep 再深一档到 #186D71（6.06:1）；
-   * - warn 沿 Glow 色相（55.2°）压深到 #A39500（3.06:1）：Glow 本色仅 1.23:1；
+   * - warn 沿 highlight yellow 色相（55.2°）压深到 #A39500（3.06:1）：highlight yellow 本色仅 1.23:1；
    * - muted / axis 是**真文字**（Recharts 坐标轴与数据标签），取中性 #5A5A5A，
    *   白底 6.90:1 过 AA；base 是对照线（图形）取 #8E8E8E（3.28:1）；
    * - grid 用纯黑 4%~10%（不再是带蓝的 rgba(15,18,25)）。
@@ -278,25 +219,25 @@ const COLORS_BY_MODE: Record<ThemeMode, ColorTokens> = {
   light: {
     /** 中性浅灰页面底（纯中性，无色相） */
     page: '#F5F5F5',
-    /** 品牌原色 TikTok White */
+    /** 界面原色 neutral white */
     surface: '#FFFFFF',
     /** 中性灰内嵌区（表头），比卡片低一档 */
     surfaceStrong: '#EFEFEF',
-    /** 品牌原色 Blaze */
-    primary: BRAND.blaze,
-    /** 沿 Glint 色相压深（白底 3.03:1，图形门槛 3:1） */
+    /** 界面原色 primary red */
+    primary: PALETTE.primaryRed,
+    /** 沿 accent cyan 色相压深（白底 3.03:1，图形门槛 3:1） */
     accent: '#1CA4A9',
-    /** 沿 Glint 色相压深两档（白底 6.06:1） */
+    /** 沿 accent cyan 色相压深两档（白底 6.06:1） */
     accentDeep: '#186D71',
-    /** 沿 Glow 色相压深（白底 3.06:1） */
+    /** 沿 highlight yellow 色相压深（白底 3.06:1） */
     warn: '#A39500',
-    /** 品牌原色 Blaze */
-    alert: BRAND.blaze,
+    /** 界面原色 primary red */
+    alert: PALETTE.primaryRed,
     /** 中性灰，对照线用（白底 3.28:1，图形门槛） */
     base: '#8E8E8E',
     /** 中性灰，图表文字用（白底 6.90:1，过 AA） */
     muted: '#5A5A5A',
-    /** 品牌原色 TikTok Black 10% */
+    /** 界面原色 neutral black 10% */
     grid: 'rgba(0,0,0,0.10)',
     /** 中性灰，坐标轴文字（白底 6.90:1） */
     axis: '#5A5A5A',
@@ -337,7 +278,7 @@ const CHART_BY_MODE: Record<ThemeMode, ChartTokens> = {
   dark: {
     guide: 'rgba(45,204,211,0.55)',
     axisLine: 'rgba(45,204,211,0.35)',
-    axisLabel: BRAND.shimmer,
+    axisLabel: PALETTE.softCyan,
     burstLabel: '#F8657F',
     cursorStroke: 'rgba(255,255,255,0.15)',
     cursorFill: 'rgba(255,255,255,0.05)',
@@ -346,27 +287,27 @@ const CHART_BY_MODE: Record<ThemeMode, ChartTokens> = {
     plateOpacity: 0.82,
   },
   /**
-   * 浅色：象限辅助线 / 坐标轴装饰沿 **Glint 色相**推导（品牌里这支青就是「点缀色」），
-   * hover 十字线与柱体高亮底改用 **品牌原色 TikTok Black** 的低透明度
+   * 浅色：象限辅助线 / 坐标轴装饰沿 **accent cyan 色相**推导（界面里这支青就是「点缀色」），
+   * hover 十字线与柱体高亮底改用 **界面原色 neutral black** 的低透明度
    * （上一版用带蓝的 rgba(15,18,25)）。
    */
   light: {
-    /** 沿 Glint 色相压深 50% 透明（图形装饰） */
+    /** 沿 accent cyan 色相压深 50% 透明（图形装饰） */
     guide: 'rgba(28,164,169,0.50)',
-    /** 沿 Glint 色相压深 32% 透明 */
+    /** 沿 accent cyan 色相压深 32% 透明 */
     axisLine: 'rgba(28,164,169,0.32)',
-    /** 坐标轴标题是真文字：沿 Glint 色相压深到白底 6.06:1 */
+    /** 坐标轴标题是真文字：沿 accent cyan 色相压深到白底 6.06:1 */
     axisLabel: '#186D71',
-    /** 爆发线标注是真文字：沿 Blaze 色相压深到白底 6.44:1 */
+    /** 爆发线标注是真文字：沿 primary red 色相压深到白底 6.44:1 */
     burstLabel: '#BD0C30',
-    /** 品牌原色 TikTok Black 16% */
+    /** 界面原色 neutral black 16% */
     cursorStroke: 'rgba(0,0,0,0.16)',
-    /** 品牌原色 TikTok Black 5% */
+    /** 界面原色 neutral black 5% */
     cursorFill: 'rgba(0,0,0,0.05)',
-    /** 品牌原色 TikTok Black */
-    hoverStroke: BRAND.black,
-    /** 品牌原色 TikTok White（与卡片底同色） */
-    plate: BRAND.white,
+    /** 界面原色 neutral black */
+    hoverStroke: PALETTE.black,
+    /** 界面原色 neutral white（与卡片底同色） */
+    plate: PALETTE.white,
     plateOpacity: 0.9,
   },
 };
@@ -376,25 +317,25 @@ export function getChartTokens(mode: ThemeMode): ChartTokens {
 }
 
 /**
- * 爆发期主色：品牌红 Blaze（#F1204A）。
+ * 爆发期主色：界面红 primary red（#F1204A）。
  *
- * 历史：曾一度改成 Thrive 品牌绿（commit 664e127），实际使用后确认「爆发 = 红」
+ * 历史：曾一度改成 deep green 界面绿（commit 664e127），实际使用后确认「爆发 = 红」
  * 才是运营心智里最直觉的映射（绿在电商语境更像「安全 / 达标」），因此回退到
  * 改绿之前的那一支红，深浅两套主题的爆发期都用它派生。
  *
- * 与品牌红强调色的关系（会不会分不清「爆发色块」和「可点元素」）：
- * - 深色：强调色实底就是 Blaze 本色 #F1204A，而热力图爆发 5 档是 Blaze 往卡片黑底
+ * 与界面红强调色的关系（会不会分不清「爆发色块」和「可点元素」）：
+ * - 深色：强调色实底就是 primary red 本色 #F1204A，而热力图爆发 5 档是 primary red 往卡片黑底
  *   压深后的 #A32740~#D22F50，最亮一档也比强调色暗一档（明度 50% vs 54%、
  *   饱和度 64% vs 88%），且爆发色块只出现在热力表格单元格里、强调色只出现在
  *   按钮 / 链接 / 选中态上，位置与形态都不重叠；
- * - 浅色：爆发 5 档是白 → Blaze 的淡化梯度 #FEEEF2~#F77E96（明度 73%~96%），
- *   与强调色 Blaze #F1204A / #E90F3B（明度 49%~54%）之间留着 20% 以上的明度差，
+ * - 浅色：爆发 5 档是白 → primary red 的淡化梯度 #FEEEF2~#F77E96（明度 73%~96%），
+ *   与强调色 primary red #F1204A / #E90F3B（明度 49%~54%）之间留着 20% 以上的明度差，
  *   不会互相冒充。
  * 命名刻意不带颜色语义（不叫 BURST_RED），下次再换色时不用改调用方。
  */
-export const BURST_COLOR = BRAND.blaze;
+export const BURST_COLOR = PALETTE.primaryRed;
 
-/** Blaze 阶梯色板（浅 → 深），排名 / 堆叠用；Top1 取最深 */
+/** primary red 阶梯色板（浅 → 深），排名 / 堆叠用；Top1 取最深 */
 export const SEQ_ROSE = [
   '#3A0A17',
   '#5C0F23',
@@ -404,7 +345,7 @@ export const SEQ_ROSE = [
   '#F1204A',
 ] as const;
 
-/** Glint 阶梯色板（浅 → 深），点缀用 */
+/** accent cyan 阶梯色板（浅 → 深），点缀用 */
 export const SEQ_CYAN = ['#2DCCD3', '#26B2B8', '#1E9CA1', '#178489'] as const;
 
 /* ------------------------------------------------------------------ *
@@ -412,34 +353,34 @@ export const SEQ_CYAN = ['#2DCCD3', '#26B2B8', '#1E9CA1', '#178489'] as const;
  *
  * ── 本轮定位变化（重要）────────────────────────────────────────────
  * 上一版这张表是**浅色分类色板本体**：一级行业（CBEC L1）色板与分国折线色在
- * 浅色下都从这里逐位取色，也就是把品牌粉彩（Glow / Shimmer / Muse / Dawn）
+ * 浅色下都从这里逐位取色，也就是把界面粉彩（highlight yellow / soft cyan / warm neutral / soft pink）
  * 统统压成中间调再用。用户实际观感是「脏、重」，本轮按指示改为
- * **浅色直接复用深色模式的品牌原色**（见 L1_PALETTE_BY_MODE / SERIES_COLORS_BY_MODE）。
+ * **浅色直接复用深色模式的界面原色**（见 L1_PALETTE_BY_MODE / SERIES_COLORS_BY_MODE）。
  *
  * 所以这张表现在只保留三类仍然需要「压深档」的角色：
  *   1. 柱体渐变的混色目标（barColor 的浅色分支）；
  *   2. 阶段色块的描边（PHASE_META light 的 border）；
- *   3. 分国折线里 TTL 主线的锚定色（品牌黑）与图例灰位替补。
- * 「品牌原色在白底上看不见」这件事**不做任何补偿**：既不换色，也不描边 ——
- * 浅色下的色块与折线就是纯品牌原色，这是用户确认过的设计取舍。
+ *   3. 分国折线里 TTL 主线的锚定色（界面黑）与图例灰位替补。
+ * 「界面原色在白底上看不见」这件事**不做任何补偿**：既不换色，也不描边 ——
+ * 浅色下的色块与折线就是纯界面原色，这是用户确认过的设计取舍。
  * ------------------------------------------------------------------ */
 const LIGHT_CATEGORY = {
-  /** 品牌原色 Blaze #F1204A（347.9°）：白底 4.16:1 */
+  /** 界面原色 primary red #F1204A（347.9°）：白底 4.16:1 */
   red: '#F1204A',
-  /** 沿 Glint 色相（182.1°）压深：白底 3.03:1（Glint 原色只有 1.96:1） */
+  /** 沿 accent cyan 色相（182.1°）压深：白底 3.03:1（accent cyan 原色只有 1.96:1） */
   cyan: '#1CA4A9',
-  /** 沿 Glow 色相（54.8°）压深：白底 3.06:1（Glow 原色只有 1.23:1） */
+  /** 沿 highlight yellow 色相（54.8°）压深：白底 3.06:1（highlight yellow 原色只有 1.23:1） */
   amber: '#A39500',
   /**
-   * 中性灰：L1 色板第 7 位在深色是 **TikTok White**，白底上是 1.00:1
+   * 中性灰：L1 色板第 7 位在深色是 **neutral white**，白底上是 1.00:1
    * （完全不可见），只能落到中性灰（中性色不算越界，但绝不染色相）。白底 4.74:1。
    * 说明：当前演示分类只有 6 个 L1，这一位实际用不到，留作扩展。
    */
   gray: '#737373',
   /**
-   * 品牌原色 TikTok Black #000000：TTL（大盘总和）主线。
-   * 深色主线是 TikTok White（黑底上最重的锚定色），白底上它 1:1 彻底不可见，
-   * 按同构关系换成品牌黑 —— 仍是全图最重的一支，6 条分国彩线压不住它。
+   * 界面原色 neutral black #000000：TTL（大盘总和）主线。
+   * 深色主线是 neutral white（黑底上最重的锚定色），白底上它 1:1 彻底不可见，
+   * 按同构关系换成界面黑 —— 仍是全图最重的一支，6 条分国彩线压不住它。
    */
   ink: '#000000',
 } as const;
@@ -448,37 +389,37 @@ const LIGHT_CATEGORY = {
  * 一级行业（CBEC L1）离散配色。
  *
  * ── 本轮改动：浅色 = 深色（逐值相同）──────────────────────────────
- * 两套主题**共用同一批 TT4B 品牌原色**（Core：Blaze / Glint / White；
- * Secondary：Glow / Dawn / Shimmer / Muse）。上一版浅色是把这批粉彩沿色相
+ * 两套主题**共用同一批 dashboard 界面原色**（Core：primary red / accent cyan / White；
+ * Secondary：highlight yellow / soft pink / soft cyan / warm neutral）。上一版浅色是把这批粉彩沿色相
  * 压深成中间调（#1CA4A9 / #A39500 / #8F2884 / #07583C / #68491D），
- * 对比度是够了，但在白底上又重又浊 —— 本轮按指示回到品牌原色。
+ * 对比度是够了，但在白底上又重又浊 —— 本轮按指示回到界面原色。
  *
- * 唯一例外：第 7 位深色是 **TikTok White**，白底上 1:1 完全不可见，
+ * 唯一例外：第 7 位深色是 **neutral white**，白底上 1:1 完全不可见，
  * 浅色落到中性灰 `LIGHT_CATEGORY.gray`（当前 6 个 L1 用不到这一位）。
  *
- * 白底可见性：Shimmer / Glow / Muse / Dawn / Glint 这几支对比度只有 1.2~2.0:1，
+ * 白底可见性：soft cyan / highlight yellow / warm neutral / soft pink / accent cyan 这几支对比度只有 1.2~2.0:1，
  * 气泡 / 柱体 / 图例方块**一律纯色填充、不加描边**（用户已明确否决描边补偿）。
  * 类目名等文字一律走语义变量，不取这里的色值。
  */
 const L1_PALETTE_BY_MODE: Record<ThemeMode, readonly string[]> = {
   dark: [
-    BRAND.blaze,
-    BRAND.glint,
-    BRAND.glow,
-    BRAND.dawn,
-    BRAND.shimmer,
-    BRAND.muse,
-    BRAND.white,
+    PALETTE.primaryRed,
+    PALETTE.accentCyan,
+    PALETTE.highlightYellow,
+    PALETTE.softPink,
+    PALETTE.softCyan,
+    PALETTE.warmNeutral,
+    PALETTE.white,
     '#F8657F',
   ],
   light: [
-    BRAND.blaze,
-    BRAND.glint,
-    BRAND.glow,
-    BRAND.dawn,
-    BRAND.shimmer,
-    BRAND.muse,
-    /** 深色此位是 TikTok White，白底不可见 → 中性灰替补（见 LIGHT_CATEGORY.gray） */
+    PALETTE.primaryRed,
+    PALETTE.accentCyan,
+    PALETTE.highlightYellow,
+    PALETTE.softPink,
+    PALETTE.softCyan,
+    PALETTE.warmNeutral,
+    /** 深色此位是 neutral white，白底不可见 → 中性灰替补（见 LIGHT_CATEGORY.gray） */
     LIGHT_CATEGORY.gray,
     '#F8657F',
   ],
@@ -543,8 +484,8 @@ const CELL_BASE = '#0D0D0D';
 
 /**
  * 饱和度削减比例：0 = 原色，1 = 完全中性灰。
- * 品牌色（Blaze / Glow / Glint）本身已比霓虹色柔和，这里只做轻度降饱和，
- * 既保留上一轮「不刺眼」的观感，也不偏离品牌色相。
+ * 界面色（primary red / highlight yellow / accent cyan）本身已比霓虹色柔和，这里只做轻度降饱和，
+ * 既保留上一轮「不刺眼」的观感，也不偏离界面色相。
  */
 const HEAT_DESATURATE = 0.22;
 
@@ -568,7 +509,7 @@ export const HEAT_LEVELS = 5;
 /**
  * 染色标尺（染色前先定上下限与阈值，再按 TGI 映射到 5 档色阶）：
  * - `minDepth` / `maxDepth`：颜色深度的下限与上限（**只作用于深色主题**：
- *   深度 = 品牌色往卡片黑底 #0D0D0D 的混色比例，越大越接近品牌原色 = 越亮）
+ *   深度 = 界面色往卡片黑底 #0D0D0D 的混色比例，越大越接近界面原色 = 越亮）
  * - `shallowAt`：落在最浅一档的 TGI 阈值
  * - `deepAt`：落在最深一档的 TGI 阈值
  *
@@ -581,10 +522,10 @@ export const HEAT_LEVELS = 5;
  * （5 档 → 每档 = (max-min)/4），色阶跨度保持原样，所以 5 档之间的层级差
  * 一点没变、只是整体往黑底压了一档：
  *   爆发 0.76~1.00 → 0.70~0.94（白字 4.93~7.19 → 5.41~7.94:1，全档过 AA）
- *   备货 0.73~0.96 → 0.67~0.90（Glow 黄本身高明度，白字仍偏低，见下）
+ *   备货 0.73~0.96 → 0.67~0.90（highlight yellow 黄本身高明度，白字仍偏低，见下）
  *   清仓 0.73~0.96 → 0.67~0.90（白字 2.30~3.72 → 2.60~4.27:1）
- * 说明（诚实标注）：深色下三阶段单元格统一用白字（既有决策），Glow 黄与 Glint
- * 青属高明度品牌色，白字本来就达不到 AA 4.5:1；`heatCellStyle` 对感知亮度
+ * 说明（诚实标注）：深色下三阶段单元格统一用白字（既有决策），highlight yellow 黄与 accent cyan
+ * 青属高明度界面色，白字本来就达不到 AA 4.5:1；`heatCellStyle` 对感知亮度
  * > 0.5 的底色补一层深色投影兜底。本轮加深让**每一档的白字对比度都变好**
  * （备货 1.39~2.34 → 1.58~2.73、清仓 2.30~3.72 → 2.60~4.27），方向是对的，
  * 但要真正过 AA 只能改成深色字（会破坏「三阶段统一白字」的既有约定），故未动。
@@ -607,14 +548,14 @@ export const HEAT_SCALE: Record<
     deepAt: 300,
   },
   stock: {
-    color: BRAND.glow,
+    color: PALETTE.highlightYellow,
     minDepth: 0.67,
     maxDepth: 0.9,
     shallowAt: 115,
     deepAt: 25,
   },
   clear: {
-    color: BRAND.glint,
+    color: PALETTE.accentCyan,
     minDepth: 0.67,
     maxDepth: 0.9,
     shallowAt: 100,
@@ -625,32 +566,32 @@ export const HEAT_SCALE: Record<
 /**
  * 浅色主题的热力 5 档色阶（level0 最浅 → level4 最深）+ 该阶段的字色。
  *
- * 为什么不能直接把深色那套算法搬过来：深色是「从卡片黑底往品牌色叠」，
+ * 为什么不能直接把深色那套算法搬过来：深色是「从卡片黑底往界面色叠」，
  * 白底上同样的做法会得到一片高明度荧光块（黄 1.2:1、青 2.0:1），
  * 白字黑字都读不了。
  *
  * ── 本版：三条色阶各自落在一条**官方 Pairing** 上 ────────────────────
- * 品牌粉彩（Shimmer / Glow / Dawn / Muse）天生就是浅底色，正好当浅色模式的
- * 色块底；深墨（Ember / Thrive）天生就是浅底上的字色。所以：
- * - 爆发期 = **Ember + Blaze**（官方 Blaze Tertiary Pairing）：
- *   底 = 白 → Blaze 的 5 档淡化梯度，字 = **Ember #4A0505 原色**；
- * - 备货期 = **Glow + Blaze** 的暖感延伸（官方 Blaze Tertiary Pairing）：
- *   底 = **Glow #FBEB35 原色**居中的 5 档（往白提一档、往深压三档），
- *   字 = **Ember #4A0505 原色**（暖底配暖墨，不用中性黑）；
- * - 清仓期 = **Thrive + Glint**（官方 Secondary Pairing）叠
- *   **Shimmer + Glint**（官方 Glint Tertiary Pairing）：
- *   底 = **Shimmer #BAF6F0 原色 → Glint #2DCCD3 原色**的梯度（两支品牌原色
- *   分别落在 L0 与 L3），字 = **Thrive #033624 原色**。
- * 三条色阶里一共直接用上 4 支品牌原色（Glow / Shimmer / Glint / Ember+Thrive 字色）。
+ * 界面粉彩（soft cyan / highlight yellow / soft pink / warm neutral）天生就是浅底色，正好当浅色模式的
+ * 色块底；深墨（deep red / deep green）天生就是浅底上的字色。所以：
+ * - 爆发期 = **deep red + primary red**（官方 primary red Tertiary Pairing）：
+ *   底 = 白 → primary red 的 5 档淡化梯度，字 = **deep red #4A0505 原色**；
+ * - 备货期 = **highlight yellow + primary red** 的暖感延伸（官方 primary red Tertiary Pairing）：
+ *   底 = **highlight yellow #FBEB35 原色**居中的 5 档（往白提一档、往深压三档），
+ *   字 = **deep red #4A0505 原色**（暖底配暖墨，不用中性黑）；
+ * - 清仓期 = **deep green + accent cyan**（官方 Secondary Pairing）叠
+ *   **soft cyan + accent cyan**（官方 accent cyan Tertiary Pairing）：
+ *   底 = **soft cyan #BAF6F0 原色 → accent cyan #2DCCD3 原色**的梯度（两支界面原色
+ *   分别落在 L0 与 L3），字 = **deep green #033624 原色**。
+ * 三条色阶里一共直接用上 4 支界面原色（highlight yellow / soft cyan / accent cyan / deep red+deep green 字色）。
  *
  * ── 本轮改动：备货 / 清仓两条色阶整体「再浅一档」，爆发红一档不动 ────────
  * 按「浅色模式的颜色应该浅一点（除了红色）」这条指示：黄系与青系的 5 档
  * **整体往白提一档**（原 L0~L3 前移一位、顶上各补一档更淡的色、砍掉原来最深
- * 那一档），爆发期 Blaze 红系**逐值保持原样**。
+ * 那一档），爆发期 primary red 红系**逐值保持原样**。
  *
  * 可读性复核（字色 vs 5 档底色实测）——
  * - 爆发（未改）14.24 / 11.69 / 9.48 / 7.80 / 6.37
- * - 备货（沿 Glow 提亮）15.09 / 14.39 / 13.30 / 13.00 / **12.83**
+ * - 备货（沿 highlight yellow 提亮）15.09 / 14.39 / 13.30 / 13.00 / **12.83**
  * - 清仓（新）  12.41 / 11.26 / 9.51 / 8.03 / **6.87**
  * 备货底提亮后同色相饱和度拉满，与深墨字 #4A0505 的对比度只升不降，**最深那一
  * 档 12.83 也仍远超 AA 4.5:1**（清仓最深档 6.87 同理）。相邻档明度差 ≥ 6%，
@@ -663,44 +604,44 @@ const LIGHT_HEAT_SCALE: Record<
   { levels: readonly string[]; fg: string; legend: string }
 > = {
   /**
-   * 爆发期：Blaze 红系（白 → Blaze 原色的 5 档淡化梯度，色相守在 348° 不动）。
-   * 字色 = 品牌原色 Ember #4A0505 ← 官方 "Ember + Blaze" 搭配。
+   * 爆发期：primary red 红系（白 → primary red 原色的 5 档淡化梯度，色相守在 348° 不动）。
+   * 字色 = 界面原色 deep red #4A0505 ← 官方 "deep red + primary red" 搭配。
    */
   burst: {
     levels: ['#FEEEF2', '#FCD2DA', '#FAB5C4', '#F99AAD', '#F77E96'],
-    fg: BRAND.ember,
+    fg: PALETTE.deepRed,
     legend: '#F77E96',
   },
   /**
-   * 备货期：Glow 黄系。**本轮沿 Glow 色相（约 55°）整体提亮**：原来最深两档
+   * 备货期：highlight yellow 黄系。**本轮沿 highlight yellow 色相（约 55°）整体提亮**：原来最深两档
    * #E2D223 / #CABB13 明度只有 51% / 43%、饱和度被压到 77~83%，看起来发橄榄、
-   * 是「暗土黄」；本轮把整条色阶朝更亮、更接近纯 Glow 黄的方向提，并把饱和度
+   * 是「暗土黄」；本轮把整条色阶朝更亮、更接近纯 highlight yellow 黄的方向提，并把饱和度
    * 拉满到 95~99%，压掉橄榄感，让最深档也是「明亮的黄」：
-   *   旧 #FEFBD3 / #FDF69F / #FBEB35(Glow) / #E2D223 / #CABB13   （L≈91/81/60/51/43）
+   *   旧 #FEFBD3 / #FDF69F / #FBEB35(highlight yellow) / #E2D223 / #CABB13   （L≈91/81/60/51/43）
    *   新 #FEFAD5 / #FDF6A8 / #FCEE54      / #FDEB28 / #FEE901   （L≈92/83/66/57/50）
-   * 色相全程守在 54~55°（Glow 区间，未漂橙/绿）；5 档明度梯度约 9/17/8/8，
+   * 色相全程守在 54~55°（highlight yellow 区间，未漂橙/绿）；5 档明度梯度约 9/17/8/8，
    * 最亮档与最深档仍差 42 个明度点，横排在一行里 5 档肉眼可分。
-   * 字色 = 品牌原色 Ember #4A0505 ← 官方 "Glow + Blaze" 暖感延伸；底提亮后与
+   * 字色 = 界面原色 deep red #4A0505 ← 官方 "highlight yellow + primary red" 暖感延伸；底提亮后与
    * 字色对比度只升不降：15.09 / 14.39 / 13.30 / 13.00 / **12.83**，
    * 最深档远超 WCAG AA 的 4.5:1。
    */
   stock: {
     levels: ['#FEFAD5', '#FDF6A8', '#FCEE54', '#FDEB28', '#FEE901'],
-    fg: BRAND.ember,
+    fg: PALETTE.deepRed,
     legend: '#FEE901',
   },
   /**
-   * 清仓期：Glint 青系。**本轮整体往白提一档**（同样前移一档、去掉最深的 #27B4BB）：
-   *   旧 Shimmer / #8CE8E6 / #5BDADC / Glint / #27B4BB
-   *   新 #E0FBF8 / **Shimmer 原色** / #8CE8E6 / #5BDADC / **Glint 原色**
-   * L1 = 品牌原色 Shimmer #BAF6F0、L4 = 品牌原色 Glint #2DCCD3，L0 是 Shimmer
+   * 清仓期：accent cyan 青系。**本轮整体往白提一档**（同样前移一档、去掉最深的 #27B4BB）：
+   *   旧 soft cyan / #8CE8E6 / #5BDADC / accent cyan / #27B4BB
+   *   新 #E0FBF8 / **soft cyan 原色** / #8CE8E6 / #5BDADC / **accent cyan 原色**
+   * L1 = 界面原色 soft cyan #BAF6F0、L4 = 界面原色 accent cyan #2DCCD3，L0 是 soft cyan
    * 再往白提一档、L2/L3 为两者插值（色相守在 182° 不动）。
-   * 字色 = 品牌原色 Thrive #033624 ← 官方 "Thrive + Glint" / "Shimmer + Glint" 搭配。
+   * 字色 = 界面原色 deep green #033624 ← 官方 "deep green + accent cyan" / "soft cyan + accent cyan" 搭配。
    */
   clear: {
-    levels: ['#E0FBF8', BRAND.shimmer, '#8CE8E6', '#5BDADC', BRAND.glint],
-    fg: BRAND.thrive,
-    legend: BRAND.glint,
+    levels: ['#E0FBF8', PALETTE.softCyan, '#8CE8E6', '#5BDADC', PALETTE.accentCyan],
+    fg: PALETTE.deepGreen,
+    legend: PALETTE.accentCyan,
   },
 };
 
@@ -717,8 +658,8 @@ const PHASE_META_BY_MODE: Record<ThemeMode, Record<Phase, PhaseStyle>> = {
       label: 'Peak',
       short: 'P',
       bg: BURST_COLOR,
-      fg: BRAND.white,
-      /** Blaze 提亮档：条带标注 / 摘要卡文字，黑底 8.0:1 */
+      fg: PALETTE.white,
+      /** primary red 提亮档：条带标注 / 摘要卡文字，黑底 8.0:1 */
       border: '#F8657F',
       band: 'rgba(241,32,74,0.14)',
       text: '#F8657F',
@@ -726,19 +667,19 @@ const PHASE_META_BY_MODE: Record<ThemeMode, Record<Phase, PhaseStyle>> = {
     stock: {
       label: 'Stock-up',
       short: 'S',
-      bg: BRAND.glow,
+      bg: PALETTE.highlightYellow,
       /** 三阶段单元格数字统一白字，图例与单元格保持一致 */
-      fg: BRAND.white,
+      fg: PALETTE.white,
       border: '#FDF489',
       band: 'rgba(251,235,53,0.13)',
-      text: BRAND.glow,
+      text: PALETTE.highlightYellow,
     },
     clear: {
       label: 'Clearance',
       short: 'C',
-      bg: BRAND.glint,
+      bg: PALETTE.accentCyan,
       /** 三阶段单元格数字统一白字，图例与单元格保持一致 */
-      fg: BRAND.white,
+      fg: PALETTE.white,
       border: '#7FE0E4',
       band: 'rgba(45,204,211,0.14)',
       text: '#7FE0E4',
@@ -754,11 +695,11 @@ const PHASE_META_BY_MODE: Record<ThemeMode, Record<Phase, PhaseStyle>> = {
     },
   },
   /**
-   * 浅色：底色取该阶段最深一档、文字取该阶段的品牌墨色；
-   * 折线图条带（band）改成**品牌原色的低透明度薄雾**（Blaze 10% / Glow 30% /
-   * Glint 16%），不再用上一版那批「压深后的中间调 rgba」——
-   * 薄雾叠在白底上得到的正是品牌粉彩的观感（#FEE9ED / #FEF9C2 / #DDF7F8）。
-   * 阶段文字色沿各自品牌色相压深，条带上实测 5.55 / 5.21 / 5.41:1（≥AA 4.5:1）。
+   * 浅色：底色取该阶段最深一档、文字取该阶段的界面墨色；
+   * 折线图条带（band）改成**界面原色的低透明度薄雾**（primary red 10% / highlight yellow 30% /
+   * accent cyan 16%），不再用上一版那批「压深后的中间调 rgba」——
+   * 薄雾叠在白底上得到的正是界面粉彩的观感（#FEE9ED / #FEF9C2 / #DDF7F8）。
+   * 阶段文字色沿各自界面色相压深，条带上实测 5.55 / 5.21 / 5.41:1（≥AA 4.5:1）。
    */
   light: {
     burst: {
@@ -766,15 +707,15 @@ const PHASE_META_BY_MODE: Record<ThemeMode, Record<Phase, PhaseStyle>> = {
       short: 'P',
       bg: LIGHT_HEAT_SCALE.burst.legend,
       fg: LIGHT_HEAT_SCALE.burst.fg,
-      /** 沿 Blaze 色相提亮：色块描边（图形，白底 3.06:1 过 3:1 门槛） */
+      /** 沿 primary red 色相提亮：色块描边（图形，白底 3.06:1 过 3:1 门槛） */
       border: '#F5607E',
       /**
-       * 折线图爆发条带：**品牌原色 Blaze 10%**（比备货 30% / 清仓 16% 更薄）。
+       * 折线图爆发条带：**界面原色 primary red 10%**（比备货 30% / 清仓 16% 更薄）。
        * 红色在白底上的视觉重量高于黄与青，同透明度铺一整段会显得压迫，
        * 也会和同区域的红色虚线「爆发线」糊在一起，所以刻意取最薄的一档。
        */
-      band: withAlpha(BRAND.blaze, 0.1),
-      /** 沿 Blaze 色相压深：白底 6.44:1、叠在 10% Blaze 条带上 5.55:1 */
+      band: withAlpha(PALETTE.primaryRed, 0.1),
+      /** 沿 primary red 色相压深：白底 6.44:1、叠在 10% primary red 条带上 5.55:1 */
       text: '#BD0C30',
     },
     stock: {
@@ -782,11 +723,11 @@ const PHASE_META_BY_MODE: Record<ThemeMode, Record<Phase, PhaseStyle>> = {
       short: 'S',
       bg: LIGHT_HEAT_SCALE.stock.legend,
       fg: LIGHT_HEAT_SCALE.stock.fg,
-      /** 沿 Glow 色相压深：色块描边（图形，白底 3.06:1，与 warn 同一支） */
+      /** 沿 highlight yellow 色相压深：色块描边（图形，白底 3.06:1，与 warn 同一支） */
       border: LIGHT_CATEGORY.amber,
-      /** **品牌原色 Glow 30%**（黄的视觉重量最轻，透明度要给足才看得见） */
-      band: withAlpha(BRAND.glow, 0.3),
-      /** 沿 Glow 色相压深：白底 5.60:1、条带上 5.21:1（Glow 原色白底仅 1.23:1，不能当字） */
+      /** **界面原色 highlight yellow 30%**（黄的视觉重量最轻，透明度要给足才看得见） */
+      band: withAlpha(PALETTE.highlightYellow, 0.3),
+      /** 沿 highlight yellow 色相压深：白底 5.60:1、条带上 5.21:1（highlight yellow 原色白底仅 1.23:1，不能当字） */
       text: '#736902',
     },
     clear: {
@@ -794,11 +735,11 @@ const PHASE_META_BY_MODE: Record<ThemeMode, Record<Phase, PhaseStyle>> = {
       short: 'C',
       bg: LIGHT_HEAT_SCALE.clear.legend,
       fg: LIGHT_HEAT_SCALE.clear.fg,
-      /** 沿 Glint 色相压深：色块描边（图形，白底 3.03:1，与 accent 同一支） */
+      /** 沿 accent cyan 色相压深：色块描边（图形，白底 3.03:1，与 accent 同一支） */
       border: LIGHT_CATEGORY.cyan,
-      /** **品牌原色 Glint 16%** */
-      band: withAlpha(BRAND.glint, 0.16),
-      /** 沿 Glint 色相压深：白底 6.06:1、条带上 5.41:1（Glint 原色白底仅 1.96:1） */
+      /** **界面原色 accent cyan 16%** */
+      band: withAlpha(PALETTE.accentCyan, 0.16),
+      /** 沿 accent cyan 色相压深：白底 6.06:1、条带上 5.41:1（accent cyan 原色白底仅 1.96:1） */
       text: '#186D71',
     },
     normal: {
@@ -807,7 +748,7 @@ const PHASE_META_BY_MODE: Record<ThemeMode, Record<Phase, PhaseStyle>> = {
       bg: 'transparent',
       /** 中性灰（不染任何色相）：白底 6.90:1 */
       fg: '#5A5A5A',
-      /** 品牌原色 TikTok Black 6% */
+      /** 界面原色 neutral black 6% */
       border: 'rgba(0,0,0,0.06)',
       band: 'transparent',
       text: '#5A5A5A',
@@ -847,7 +788,7 @@ export function heatDepth(phase: Phase, tgi: number): number {
 /**
  * 爆发期深色 5 档色阶（level0..4）：#A32740 → #D22F50。
  * 与备货 / 清仓完全同一套算法（同色相往卡片黑底 #0D0D0D 压深，深度 0.76→1.00），
- * 所以逐值等于「改成品牌绿之前」的爆发期观感。这里显式导出一份，
+ * 所以逐值等于「改成界面绿之前」的爆发期观感。这里显式导出一份，
  * 只为让 5 档色值在代码里可读、可核对，染色逻辑仍走 heatCellStyle 的通用分支。
  */
 export const BURST_SCALE: readonly string[] = Array.from(
@@ -890,7 +831,7 @@ export function heatCellStyle(
   const background = mixHex(CELL_BASE, heatHue(phase), heatDepth(phase, tgi));
   return {
     background,
-    color: BRAND.white,
+    color: PALETTE.white,
     textShadow:
       luminance(background) > 0.5 ? '0 1px 2px rgba(0,0,0,0.85)' : undefined,
   };
@@ -911,8 +852,8 @@ export function phaseColor(phase: Phase, mode: ThemeMode = 'dark'): string {
  * 柱状图染色：单色相，数值越高颜色越深
  * ------------------------------------------------------------------ */
 
-/** 柱状图统一色相：品牌主色 Blaze */
-export const BAR_HUE = BRAND.blaze;
+/** 柱状图统一色相：界面主色 primary red */
+export const BAR_HUE = PALETTE.primaryRed;
 /** 柱体颜色深度上下限：下限保证小值也看得见，上限即满色 */
 export const BAR_DEPTH = { min: 0.42, max: 1 } as const;
 
@@ -945,59 +886,59 @@ export function barColor(
  * TTL（SEA 总和）与六国的固定描边色，两两可分。
  *
  * ── 本轮改动：浅色 = 深色（逐值相同，只换 TTL）─────────────────────
- * 上一版浅色把六支品牌色统统沿色相压深成中间调（#1CA4A9 / #A39500 / #8F2884 /
+ * 上一版浅色把六支界面色统统沿色相压深成中间调（#1CA4A9 / #A39500 / #8F2884 /
  * #68491D / #07583C），对比度够但观感发浊，而且 SG / ID 两位与深色的色相家族
- * 对不上（深色 SG=Shimmer 薄荷、ID=Muse 米棕，浅色却是棕和墨绿）。
- * 本轮按指示**直接复用深色模式的品牌原色**，只有 TTL 无法照搬：
- * 深色 TTL 是 TikTok White（黑底上最重的主线），白底上 1:1 完全不可见，
- * 换成同为品牌原色的 TikTok Black（21:1），角色完全同构。
+ * 对不上（深色 SG=soft cyan 薄荷、ID=warm neutral 米棕，浅色却是棕和墨绿）。
+ * 本轮按指示**直接复用深色模式的界面原色**，只有 TTL 无法照搬：
+ * 深色 TTL 是 neutral white（黑底上最重的主线），白底上 1:1 完全不可见，
+ * 换成同为界面原色的 neutral black（21:1），角色完全同构。
  *
- * 白底可见性怎么处理：**不处理**。品牌粉彩当细线在白底上只有 1.2~2.0:1，
- * 这是用户知情后的设计取舍 —— 每条线都是单层纯品牌原色，不垫外描边、
- * 不加深、不外发光。MY（Blaze 4.16:1）与 TTL（黑 21:1）本身够看。
+ * 白底可见性怎么处理：**不处理**。界面粉彩当细线在白底上只有 1.2~2.0:1，
+ * 这是用户知情后的设计取舍 —— 每条线都是单层纯界面原色，不垫外描边、
+ * 不加深、不外发光。MY（primary red 4.16:1）与 TTL（黑 21:1）本身够看。
  *
- * 两两区分度（改用品牌原色后的实际情况）：
- *   VN(Glow 亮黄) vs SG(Shimmer 薄荷) —— 上一版这两条是「橄榄 vs 哑棕」，
- *     色相仅差 20° 又都偏暗，用户反馈难分辨；换成品牌原色后一支黄一支青，
+ * 两两区分度（改用界面原色后的实际情况）：
+ *   VN(highlight yellow 亮黄) vs SG(soft cyan 薄荷) —— 上一版这两条是「橄榄 vs 哑棕」，
+ *     色相仅差 20° 又都偏暗，用户反馈难分辨；换成界面原色后一支黄一支青，
  *     色相差 119°，这个问题自然消解；
- *   TH(Glint 饱和青 182.5°) vs SG(Shimmer 薄荷 174.0°) —— 仅差 8.5°，
+ *   TH(accent cyan 饱和青 182.5°) vs SG(soft cyan 薄荷 174.0°) —— 仅差 8.5°，
  *     靠「饱和度 65% vs 71% + 明度 50% vs 84%」拉开：TH 是实心中青、
  *     SG 是更浅的薄荷，这是本轮相对最接近的一对（见交付说明）。
  */
 const SERIES_COLORS_BY_MODE: Record<ThemeMode, Record<string, string>> = {
   dark: {
-    TTL: BRAND.white,
-    MY: BRAND.blaze,
-    TH: BRAND.glint,
-    VN: BRAND.glow,
-    PH: BRAND.dawn,
-    SG: BRAND.shimmer,
-    ID: BRAND.muse,
+    TTL: PALETTE.white,
+    MY: PALETTE.primaryRed,
+    TH: PALETTE.accentCyan,
+    VN: PALETTE.highlightYellow,
+    PH: PALETTE.softPink,
+    SG: PALETTE.softCyan,
+    ID: PALETTE.warmNeutral,
   },
   light: {
-    /** 深色是 TikTok White；白底不可见 → 品牌原色 TikTok Black（同为「最重的主线」） */
+    /** 深色是 neutral white；白底不可见 → 界面原色 neutral black（同为「最重的主线」） */
     TTL: LIGHT_CATEGORY.ink,
-    /** 品牌原色 Blaze（白底 4.16:1） */
-    MY: BRAND.blaze,
-    /** 品牌原色 Glint（白底 1.96:1，纯原色单层线，不描边） */
-    TH: BRAND.glint,
-    /** 品牌原色 Glow（白底 1.23:1，纯原色单层线，不描边） */
-    VN: BRAND.glow,
+    /** 界面原色 primary red（白底 4.16:1） */
+    MY: PALETTE.primaryRed,
+    /** 界面原色 accent cyan（白底 1.96:1，纯原色单层线，不描边） */
+    TH: PALETTE.accentCyan,
+    /** 界面原色 highlight yellow（白底 1.23:1，纯原色单层线，不描边） */
+    VN: PALETTE.highlightYellow,
     /**
      * ── 本轮改动：PH / SG / ID 三支在白底上压深 ──────────────────────
-     * 这三支品牌粉彩（Dawn 1.63:1 / Shimmer 1.20:1 / Muse 1.43:1）当细线画在
+     * 这三支界面粉彩（soft pink 1.63:1 / soft cyan 1.20:1 / warm neutral 1.43:1）当细线画在
      * 白底上几乎看不见，用户明确要求「浅色模式加深」。做法是**只压明度、锁死色相**
-     * （inkOf 保持 H 不变、饱和度保底），所以还是同一支品牌色的深色档，
-     * 不引入品牌外色相、也不改深色模式：
-     * - PH：Dawn 306° → L 46%，白底 5.12:1（品红）
-     * - SG：Shimmer 174° → L 34%，白底 3.52:1（深薄荷；同时与 TH 的 Glint
+     * （inkOf 保持 H 不变、饱和度保底），所以还是同一支界面色的深色档，
+     * 不引入界面外色相、也不改深色模式：
+     * - PH：soft pink 306° → L 46%，白底 5.12:1（品红）
+     * - SG：soft cyan 174° → L 34%，白底 3.52:1（深薄荷；同时与 TH 的 accent cyan
      *   拉开 50% vs 34% 的明度差，两支青不再糊在一起）
-     * - ID：Muse 35° → L 42%，白底 3.91:1（暖棕）
-     * MY(Blaze) / TH(Glint) / VN(Glow) 未在本轮要求内，保持品牌原色不动。
+     * - ID：warm neutral 35° → L 42%，白底 3.91:1（暖棕）
+     * MY(primary red) / TH(accent cyan) / VN(highlight yellow) 未在本轮要求内，保持界面原色不动。
      */
-    PH: inkOf(BRAND.dawn, 0.46),
-    SG: inkOf(BRAND.shimmer, 0.34),
-    ID: inkOf(BRAND.muse, 0.42),
+    PH: inkOf(PALETTE.softPink, 0.46),
+    SG: inkOf(PALETTE.softCyan, 0.34),
+    ID: inkOf(PALETTE.warmNeutral, 0.42),
   },
 };
 
@@ -1011,7 +952,7 @@ export function getSeriesColors(mode: ThemeMode): Record<string, string> {
 /**
  * 卡片统一样式：卡片底 + 细边框 + 圆角，禁止 3D / 渐变。
  * 颜色全部走语义变量（bg-card / border-line-2 / text-fg-1），
- * shadow-card 在深色主题下解析成 none（品牌规范：深色底不投影），
+ * shadow-card 在深色主题下解析成 none（界面规范：深色底不投影），
  * 浅色主题下才是一层极浅的投影，用来把白卡片从浅灰页面底上"托"起来。
  */
 export const CARD_CLASS =
@@ -1019,9 +960,9 @@ export const CARD_CLASS =
 
 /* ------------------------------------------------------------------ *
  * 日历配色（营销日历专用）
- * 深色：只在品牌色板已有色相上做「提亮 / 变深 / 透明度」衍生，不引入新色相：
- * - 绿色阶 = Thrive #033624 等比提亮、蓝色阶 = Glint × Shimmer
- * - 共同节日 = Dawn、跨类合并块 = Muse、旺季 = Glow、跨月标注 = Glow
+ * 深色：只在界面色板已有色相上做「提亮 / 变深 / 透明度」衍生，不引入新色相：
+ * - 绿色阶 = deep green #033624 等比提亮、蓝色阶 = accent cyan × soft cyan
+ * - 共同节日 = soft pink、跨类合并块 = warm neutral、旺季 = highlight yellow、跨月标注 = highlight yellow
  * 浅色：同样五类语义、同样五个色相，但每类取「同色相深化后的 500 锚点」，
  * 块底改成该锚点 10%~22% 的薄雾（叠在白底上是淡彩），文字改成同色相深墨。
  * 组件里禁止再写裸 hex，统一取 `getCalendarColors(mode)`。
@@ -1035,32 +976,32 @@ export type ColorScale = {
   100: string;
 };
 
-/** Thrive 绿色阶（900 = Thrive 原色最深，100 最亮），斋月语义统一用这一档 */
+/** deep green 绿色阶（900 = deep green 原色最深，100 最亮），斋月语义统一用这一档 */
 export const GREEN_SCALE: ColorScale = {
-  900: BRAND.thrive,
-  700: brighten(BRAND.thrive, 2.1),
-  500: brighten(BRAND.thrive, 3.1),
-  300: brighten(BRAND.thrive, 4.1),
-  100: mixHex(brighten(BRAND.thrive, 4.6), BRAND.white, 0.42),
+  900: PALETTE.deepGreen,
+  700: brighten(PALETTE.deepGreen, 2.1),
+  500: brighten(PALETTE.deepGreen, 3.1),
+  300: brighten(PALETTE.deepGreen, 4.1),
+  100: mixHex(brighten(PALETTE.deepGreen, 4.6), PALETTE.white, 0.42),
 };
 
-/** Glint × Shimmer 蓝色阶，非斋月语义统一用这一档 */
+/** accent cyan × soft cyan 蓝色阶，非斋月语义统一用这一档 */
 export const BLUE_SCALE: ColorScale = {
-  900: mixHex(BRAND.glint, BRAND.black, 0.8),
-  700: mixHex(BRAND.glint, BRAND.black, 0.45),
-  500: BRAND.glint,
-  300: mixHex(BRAND.glint, BRAND.shimmer, 0.5),
-  100: BRAND.shimmer,
+  900: mixHex(PALETTE.accentCyan, PALETTE.black, 0.8),
+  700: mixHex(PALETTE.accentCyan, PALETTE.black, 0.45),
+  500: PALETTE.accentCyan,
+  300: mixHex(PALETTE.accentCyan, PALETTE.softCyan, 0.5),
+  100: PALETTE.softCyan,
 };
 
-/** 由单个品牌色生成同色相的深浅阶（Dawn / Muse 这类只有一个色值的辅助色用） */
+/** 由单个界面色生成同色相的深浅阶（soft pink / warm neutral 这类只有一个色值的辅助色用） */
 function scaleOf(hex: string): ColorScale {
   return {
-    900: mixHex(hex, BRAND.black, 0.82),
-    700: mixHex(hex, BRAND.black, 0.5),
+    900: mixHex(hex, PALETTE.black, 0.82),
+    700: mixHex(hex, PALETTE.black, 0.5),
     500: hex,
-    300: mixHex(hex, BRAND.white, 0.22),
-    100: mixHex(hex, BRAND.white, 0.5),
+    300: mixHex(hex, PALETTE.white, 0.22),
+    100: mixHex(hex, PALETTE.white, 0.5),
   };
 }
 
@@ -1089,7 +1030,7 @@ export type CalendarTone = {
   panelBorder: string;
 };
 
-/** 深色：低透明度品牌色底 + 亮色文字（与改造前逐值一致） */
+/** 深色：低透明度界面色底 + 亮色文字（与改造前逐值一致） */
 function buildToneDark(scale: ColorScale): CalendarTone {
   return {
     bg: withAlpha(scale[500], 0.11),
@@ -1097,7 +1038,7 @@ function buildToneDark(scale: ColorScale): CalendarTone {
     bgActive: withAlpha(scale[500], 0.34),
     borderActive: scale[300],
     text: scale[100],
-    textActive: BRAND.white,
+    textActive: PALETTE.white,
     subText: withAlpha(scale[100], 0.62),
     tagBg: withAlpha(scale[500], 0.24),
     tagText: scale[100],
@@ -1175,39 +1116,39 @@ export type CalendarColors = {
 
 const CALENDAR_BY_MODE: Record<ThemeMode, CalendarColors> = {
   dark: {
-    /** 六国共同节日：Dawn */
-    common: buildToneDark(scaleOf(BRAND.dawn)),
-    /** 斋月国节日 + 斋月国气候：Thrive 绿 */
+    /** 六国共同节日：soft pink */
+    common: buildToneDark(scaleOf(PALETTE.softPink)),
+    /** 斋月国节日 + 斋月国气候：deep green 绿 */
     ramadan: buildToneDark(GREEN_SCALE),
-    /** 非斋月国节日 + 非斋月国气候：Glint 蓝 */
+    /** 非斋月国节日 + 非斋月国气候：accent cyan 蓝 */
     nonRamadan: buildToneDark(BLUE_SCALE),
-    /** 合并后同时含斋月国与非斋月国的跨类块：Muse */
-    mixed: buildToneDark(scaleOf(BRAND.muse)),
+    /** 合并后同时含斋月国与非斋月国的跨类块：warm neutral */
+    mixed: buildToneDark(scaleOf(PALETTE.warmNeutral)),
     /**
-     * 旺季营销节点（返校季 / 婚礼旺季 / 装修旺季 …）：Glow 黄。
-     * 黑底上黄色与共同节日的 Dawn 粉、斋月的 Thrive 绿、非斋月的 Glint 蓝
+     * 旺季营销节点（返校季 / 婚礼旺季 / 装修旺季 …）：highlight yellow 黄。
+     * 黑底上黄色与共同节日的 soft pink 粉、斋月的 deep green 绿、非斋月的 accent cyan 蓝
      * 三档色相距离都最远，一眼就能把「旺季行」与三类节日行分开。
      */
-    seasonal: buildToneDark(scaleOf(BRAND.glow)),
-    /** 选中月份列底色（与月份表头的 Blaze 选中态同源） */
-    selectedMonth: withAlpha(BRAND.blaze, 0.08),
-    /** 跨月块内的月份分段标注：Glow */
-    spanLabel: withAlpha(BRAND.glow, 0.8),
+    seasonal: buildToneDark(scaleOf(PALETTE.highlightYellow)),
+    /** 选中月份列底色（与月份表头的 primary red 选中态同源） */
+    selectedMonth: withAlpha(PALETTE.primaryRed, 0.08),
+    /** 跨月块内的月份分段标注：highlight yellow */
+    spanLabel: withAlpha(PALETTE.highlightYellow, 0.8),
   },
   /**
-   * 浅色：五类语义各锁一支品牌色相，锚点全部是「沿品牌色相调明度」得到
-   * （品牌粉彩本色在白底上都是 1.2~1.6:1，做不了描边与字，只能当 10%~20% 的薄雾底）：
-   * - common     沿 Dawn 306° 压深 → #C93EBB
-   * - ramadan    沿 Thrive 159° 提亮 → #0F8B60
-   * - nonRamadan 沿 Glint 183° 压深 → #17878C
-   * - mixed      沿 Muse 35° 压深 → #86612D
-   * - seasonal   沿 Glow 55° 压深 → #B0A204
+   * 浅色：五类语义各锁一支界面色相，锚点全部是「沿界面色相调明度」得到
+   * （界面粉彩本色在白底上都是 1.2~1.6:1，做不了描边与字，只能当 10%~20% 的薄雾底）：
+   * - common     沿 soft pink 306° 压深 → #C93EBB
+   * - ramadan    沿 deep green 159° 提亮 → #0F8B60
+   * - nonRamadan 沿 accent cyan 183° 压深 → #17878C
+   * - mixed      沿 warm neutral 35° 压深 → #86612D
+   * - seasonal   沿 highlight yellow 55° 压深 → #B0A204
    * 上一版这五支锚点是 #B44FA9 / #0E8F60 / #0E8A93 / #96632B / #B08405，
-   * 色相虽然对得上，但都是「凭手感调的中间调」；本版逐支按品牌色相 ±1° 重算，
+   * 色相虽然对得上，但都是「凭手感调的中间调」；本版逐支按界面色相 ±1° 重算，
    * 并保持「块底 = 锚点 10%/18% 薄雾、字 = 同色相深墨」的既有结构不动。
    */
   light: {
-    /** 共同节日：沿 Dawn 色相（306.0°）压深。字色白底 5.02~8.96:1 */
+    /** 共同节日：沿 soft pink 色相（306.0°）压深。字色白底 5.02~8.96:1 */
     common: buildToneLight('#C93EBB', {
       text: 0.431,
       sub: 0.405,
@@ -1215,7 +1156,7 @@ const CALENDAR_BY_MODE: Record<ThemeMode, CalendarColors> = {
       active: 0.312,
       tag: 0.355,
     }),
-    /** 斋月：沿 Thrive 色相（159.2°）提亮。字色白底 5.01~8.85:1 */
+    /** 斋月：沿 deep green 色相（159.2°）提亮。字色白底 5.01~8.85:1 */
     ramadan: buildToneLight('#0F8B60', {
       text: 0.255,
       sub: 0.24,
@@ -1223,7 +1164,7 @@ const CALENDAR_BY_MODE: Record<ThemeMode, CalendarColors> = {
       active: 0.185,
       tag: 0.212,
     }),
-    /** 非斋月：沿 Glint 色相（182.6°）压深。字色白底 5.01~8.79:1 */
+    /** 非斋月：沿 accent cyan 色相（182.6°）压深。字色白底 5.01~8.79:1 */
     nonRamadan: buildToneLight('#17878C', {
       text: 0.271,
       sub: 0.254,
@@ -1231,7 +1172,7 @@ const CALENDAR_BY_MODE: Record<ThemeMode, CalendarColors> = {
       active: 0.197,
       tag: 0.226,
     }),
-    /** 跨类合并：沿 Muse 色相（35.1°）压深。字色白底 5.02~8.90:1 */
+    /** 跨类合并：沿 warm neutral 色相（35.1°）压深。字色白底 5.02~8.90:1 */
     mixed: buildToneLight('#86612D', {
       text: 0.345,
       sub: 0.323,
@@ -1239,7 +1180,7 @@ const CALENDAR_BY_MODE: Record<ThemeMode, CalendarColors> = {
       active: 0.25,
       tag: 0.284,
     }),
-    /** 旺季：沿 Glow 色相（55.1°）压深。字色白底 5.01~8.22:1 */
+    /** 旺季：沿 highlight yellow 色相（55.1°）压深。字色白底 5.01~8.22:1 */
     seasonal: buildToneLight('#B0A204', {
       text: 0.233,
       sub: 0.225,
@@ -1247,11 +1188,11 @@ const CALENDAR_BY_MODE: Record<ThemeMode, CalendarColors> = {
       active: 0.175,
       tag: 0.208,
     }),
-    /** 选中月份列底色：**品牌原色 Blaze 5%**（与月份表头的 Blaze 选中态同源） */
-    selectedMonth: withAlpha(BRAND.blaze, 0.05),
+    /** 选中月份列底色：**界面原色 primary red 5%**（与月份表头的 primary red 选中态同源） */
+    selectedMonth: withAlpha(PALETTE.primaryRed, 0.05),
     /**
      * 跨月块内的月份分段标注（单色，会落在任意节日块的淡彩上）。
-     * 沿 Glow 色相压深：白底 6.32:1，在「选中态 bgActive + 选中月 Blaze 薄雾」
+     * 沿 highlight yellow 色相压深：白底 6.32:1，在「选中态 bgActive + 选中月 primary red 薄雾」
      * 的最坏叠底上仍有 4.62:1（≥AA 4.5:1）。
      */
     spanLabel: '#6A6102',
@@ -1278,8 +1219,8 @@ export type CalendarToneName =
  * 与节日块的淡彩 chip 不同，甘特条带是**实色条**（参考稿即为实色 pill）：
  * 每一行一支主题色 —— 按旺季视角是「一个旺季一色」，按国家视角是
  * 「一个国家一色，且与 TGI 曲线的分国色同源」。
- * 五支旺季色与六支国家色全部取自 TT4B 品牌色板，只做「同色相调明度」，
- * 不引入品牌外色相；条内文字色由底色亮度自动选白 / 近黑，保证任何色相都可读。
+ * 五支旺季色与六支国家色全部取自 dashboard 界面色板，只做「同色相调明度」，
+ * 不引入界面外色相；条内文字色由底色亮度自动选白 / 近黑，保证任何色相都可读。
  * ------------------------------------------------------------------ */
 
 export type GanttTone = {
@@ -1332,7 +1273,7 @@ function fillForWhiteInk(base: string, minContrast: number): string {
   const [h, s, l] = hexToHsl(base);
   for (let next = l; next >= 0.14; next -= 0.01) {
     const hex = hslToHex(h, s, next);
-    if (contrastRatio(hex, BRAND.white) >= minContrast) {
+    if (contrastRatio(hex, PALETTE.white) >= minContrast) {
       return hex;
     }
   }
@@ -1349,7 +1290,7 @@ function vividFill(base: string, maxL = 0.55, minL = 0.18): string {
   const sat = Math.max(s, 0.8);
   for (let l = maxL; l >= minL; l -= 0.01) {
     const hex = hslToHex(h, sat, l);
-    if (contrastRatio(hex, BRAND.white) >= WHITE_INK_ACTIVE) {
+    if (contrastRatio(hex, PALETTE.white) >= WHITE_INK_ACTIVE) {
       return hex;
     }
   }
@@ -1368,7 +1309,7 @@ function buildGanttTone(base: string, mode: ThemeMode): GanttTone {
   );
   /**
    * 选中态一律「更亮」，不再压深：
-   * - 深色：朝品牌原色提亮（离黑底更远）；
+   * - 深色：朝界面原色提亮（离黑底更远）；
    * - 浅色：沿色相提亮 + 加饱和（上一版是压深，看起来像被按灭，改成高亮）。
    * 两种模式都再过一遍白字对比度门槛，保证「更亮」不会把白字糊掉。
    */
@@ -1377,8 +1318,8 @@ function buildGanttTone(base: string, mode: ThemeMode): GanttTone {
     WHITE_INK_ACTIVE,
   );
   /** 条内主文字：深浅模式、选中与否统一纯白 */
-  const text = BRAND.white;
-  const textActive = BRAND.white;
+  const text = PALETTE.white;
+  const textActive = PALETTE.white;
   return {
     fill,
     fillActive,
@@ -1403,14 +1344,14 @@ function buildGanttTone(base: string, mode: ThemeMode): GanttTone {
 /**
  * 节日块与旺季甘特条统一成同一套「实色圆角条」风格（以营销节点风格为准），
  * 因此三类节日行也各取一支 GanttTone，只是色相沿用日历既有语义：
- * 共同 Dawn 粉 / 斋月 Thrive 绿 / 非斋月 Glint 青 / 跨类合并 Muse 棕 / 旺季 Glow 黄。
+ * 共同 soft pink 粉 / 斋月 deep green 绿 / 非斋月 accent cyan 青 / 跨类合并 warm neutral 棕 / 旺季 highlight yellow 黄。
  */
 const FESTIVAL_BAR_HUES: Record<CalendarToneName, string> = {
-  common: BRAND.dawn,
+  common: PALETTE.softPink,
   ramadan: GREEN_SCALE[500],
-  nonRamadan: BRAND.glint,
-  mixed: BRAND.muse,
-  seasonal: BRAND.glow,
+  nonRamadan: PALETTE.accentCyan,
+  mixed: PALETTE.warmNeutral,
+  seasonal: PALETTE.highlightYellow,
 };
 
 const FESTIVAL_BAR_TONES: Record<
@@ -1440,29 +1381,29 @@ export function getFestivalBarTone(
 }
 
 /**
- * 旺季类型 → 主题色（五支品牌色相各一支，两两色相距离最大化）：
- * 婚礼 Dawn 粉 / 旅游 Blaze 红 / 学生假期 Glow 黄 / 返校季 Glint 青 / 装修 Muse 棕。
+ * 旺季类型 → 主题色（五支界面色相各一支，两两色相距离最大化）：
+ * 婚礼 soft pink 粉 / 旅游 primary red 红 / 学生假期 highlight yellow 黄 / 返校季 accent cyan 青 / 装修 warm neutral 棕。
  */
 const SEASONAL_PEAK_HUES: Record<string, string> = {
-  婚礼旺季: BRAND.dawn,
-  旅游旺季: BRAND.blaze,
-  学生假期: BRAND.glow,
-  返校季: BRAND.glint,
-  装修旺季: BRAND.muse,
+  婚礼旺季: PALETTE.softPink,
+  旅游旺季: PALETTE.primaryRed,
+  学生假期: PALETTE.highlightYellow,
+  返校季: PALETTE.accentCyan,
+  装修旺季: PALETTE.warmNeutral,
 };
 
 /** 国家 → 主题色：与 TGI 曲线的分国色同源，保证「同一个国家全站同一支色」 */
 const COUNTRY_HUES: Record<string, string> = {
-  MY: BRAND.blaze,
-  TH: BRAND.glint,
-  VN: BRAND.glow,
-  PH: BRAND.dawn,
-  SG: BRAND.shimmer,
-  ID: BRAND.muse,
+  MY: PALETTE.primaryRed,
+  TH: PALETTE.accentCyan,
+  VN: PALETTE.highlightYellow,
+  PH: PALETTE.softPink,
+  SG: PALETTE.softCyan,
+  ID: PALETTE.warmNeutral,
 };
 
-/** 兜底色（底表出现色板里没登记的旺季名时用）：Glow */
-const GANTT_FALLBACK_HUE = BRAND.glow;
+/** 兜底色（底表出现色板里没登记的旺季名时用）：highlight yellow */
+const GANTT_FALLBACK_HUE = PALETTE.highlightYellow;
 
 const GANTT_TONES_BY_MODE: Record<
   ThemeMode,
@@ -1514,13 +1455,13 @@ export function getGanttTone(
 
 /* ------------------------------------------------------------------ *
  * 节日标签配色（热力图「相关节日」列）
- * 深色：只允许从 TT4B 品牌色板衍生（Blaze / Glint / Glow / Dawn / Shimmer /
- * Muse 之间混色），绿色阶（Thrive）保留给穆斯林 / 斋月国节日专用。
+ * 深色：只允许从 dashboard 界面色板衍生（primary red / accent cyan / highlight yellow / soft pink / soft cyan /
+ * warm neutral 之间混色），绿色阶（deep green）保留给穆斯林 / 斋月国节日专用。
  * 浅色：同样的绿色语义，色相环取 8 档（原因见 FESTIVAL_HUES_LIGHT 的注释：
- * 品牌色板凑不出 10 支互相可分且不越界的浅色相），每支都是「沿品牌色相调明度」得到。
+ * 界面色板凑不出 10 支互相可分且不越界的浅色相），每支都是「沿界面色相调明度」得到。
  * ------------------------------------------------------------------ */
 
-/** 穆斯林 / 斋月国节日：硬性统一用绿色阶（Thrive） */
+/** 穆斯林 / 斋月国节日：硬性统一用绿色阶（deep green） */
 const FESTIVAL_GREEN_NAMES = new Set([
   '斋月',
   '开斋节',
@@ -1529,80 +1470,80 @@ const FESTIVAL_GREEN_NAMES = new Set([
 ]);
 
 /**
- * 非绿色节日的品牌色相环（10 档，全部由品牌色板混色得到，刻意不含绿色系，
+ * 非绿色节日的界面色相环（10 档，全部由界面色板混色得到，刻意不含绿色系，
  * 免得与「穆斯林节日 = 绿色」的语义撞车；也不含纯白，避免与普通文字混淆）。
  */
 const FESTIVAL_HUES_DARK: string[] = [
-  BRAND.blaze,
-  BRAND.glint,
-  BRAND.glow,
-  BRAND.dawn,
-  BRAND.muse,
-  /** Blaze × Glow：橙 */
-  mixHex(BRAND.blaze, BRAND.glow, 0.5),
-  /** Dawn × Glint：雾蓝 */
-  mixHex(BRAND.dawn, BRAND.glint, 0.5),
-  BRAND.shimmer,
-  /** Blaze × Dawn：玫粉 */
-  mixHex(BRAND.blaze, BRAND.dawn, 0.5),
-  /** Glint 压深：深青 */
-  mixHex(BRAND.glint, BRAND.black, 0.35),
+  PALETTE.primaryRed,
+  PALETTE.accentCyan,
+  PALETTE.highlightYellow,
+  PALETTE.softPink,
+  PALETTE.warmNeutral,
+  /** primary red × highlight yellow：橙 */
+  mixHex(PALETTE.primaryRed, PALETTE.highlightYellow, 0.5),
+  /** soft pink × accent cyan：雾蓝 */
+  mixHex(PALETTE.softPink, PALETTE.accentCyan, 0.5),
+  PALETTE.softCyan,
+  /** primary red × soft pink：玫粉 */
+  mixHex(PALETTE.primaryRed, PALETTE.softPink, 0.5),
+  /** accent cyan 压深：深青 */
+  mixHex(PALETTE.accentCyan, PALETTE.black, 0.35),
 ];
 
 /**
- * 浅色色相环：**8 档，全部锁在品牌色相上**（深色环是 10 档）。
+ * 浅色色相环：**8 档，全部锁在界面色相上**（深色环是 10 档）。
  *
- * 为什么浅色只有 8 档：深色环里第 7 位「Dawn × Glint 雾蓝」与第 8 位「Shimmer」
- * 在白底上压深后分别会变成**蓝**和**与 Glint 撞车的青**——
- * 品牌色板里没有蓝，Shimmer 与 Glint 色相只差 8.5°。品牌只有 6 个彩色相，
- * 其中 Thrive 绿被「穆斯林节日恒为绿」占用，剩下 5 个色相要撑起一个色相环，
- * 硬凑 10 档必然要么造出品牌外色相、要么两两分不开。所以浅色环取 8 档：
- * 5 个色相各一支中间调（Blaze / Glint / Glow / Dawn / Muse），
- * 再加 3 支「同色相但明显更深」的深墨档（Dawn 深梅 / Glint 深青 / Ember 栗），
+ * 为什么浅色只有 8 档：深色环里第 7 位「soft pink × accent cyan 雾蓝」与第 8 位「soft cyan」
+ * 在白底上压深后分别会变成**蓝**和**与 accent cyan 撞车的青**——
+ * 界面色板里没有蓝，soft cyan 与 accent cyan 色相只差 8.5°。界面只有 6 个彩色相，
+ * 其中 deep green 绿被「穆斯林节日恒为绿」占用，剩下 5 个色相要撑起一个色相环，
+ * 硬凑 10 档必然要么造出界面外色相、要么两两分不开。所以浅色环取 8 档：
+ * 5 个色相各一支中间调（primary red / accent cyan / highlight yellow / soft pink / warm neutral），
+ * 再加 3 支「同色相但明显更深」的深墨档（soft pink 深梅 / accent cyan 深青 / deep red 栗），
  * 靠明度差与前 5 支拉开。代价是 30 个节日名按 `index % 8` 循环，
  * 会有几个节日在浅色下共用同一支色（深色是 `% 10`）—— pill 上本来就带节日
- * 名文字，颜色只是辅助分组，这个取舍换来的是「全环零品牌外色相」。
+ * 名文字，颜色只是辅助分组，这个取舍换来的是「全环零界面外色相」。
  */
 const FESTIVAL_HUES_LIGHT: string[] = [
-  /** ① 沿 Blaze 色相（348°）压深 */
+  /** ① 沿 primary red 色相（348°）压深 */
   '#E50E3A',
-  /** ② 沿 Glint 色相（183°）压深 */
+  /** ② 沿 accent cyan 色相（183°）压深 */
   '#1C8084',
-  /** ③ 沿 Glow 色相（55°）压深 */
+  /** ③ 沿 highlight yellow 色相（55°）压深 */
   '#7E7402',
-  /** ④ 沿 Dawn 色相（306°）压深 */
+  /** ④ 沿 soft pink 色相（306°）压深 */
   '#C137B3',
-  /** ⑤ 沿 Muse 色相（35°）压深（taupe） */
+  /** ⑤ 沿 warm neutral 色相（35°）压深（taupe） */
   '#654C29',
-  /** ⑥ 沿 Dawn 色相再压深两档（深梅，与 ④ 靠明度差区分） */
+  /** ⑥ 沿 soft pink 色相再压深两档（深梅，与 ④ 靠明度差区分） */
   '#76216E',
-  /** ⑦ 沿 Glint 色相再压深两档（深青，与 ② 靠明度差区分） */
+  /** ⑦ 沿 accent cyan 色相再压深两档（深青，与 ② 靠明度差区分） */
   '#0F4749',
-  /** ⑧ 品牌原色 Ember #4A0505 提亮一档（栗，与 ① Blaze 靠明度差区分） */
+  /** ⑧ 界面原色 deep red #4A0505 提亮一档（栗，与 ① primary red 靠明度差区分） */
   '#590606',
 ];
 
 /**
- * 浅色节日「字色」环：与 FESTIVAL_HUES_LIGHT 逐位对应，沿同一支品牌色相再压一档。
+ * 浅色节日「字色」环：与 FESTIVAL_HUES_LIGHT 逐位对应，沿同一支界面色相再压一档。
  *
  * 「相关节日」pill 是「淡彩底 + 同色相字」：底 = 该色 12%（strong）/ 6%（normal）
  * 薄雾，字 = 下面这支墨。对比度按**最坏叠底**（strong 12% 底再叠「选中行 7%
- * Blaze 薄雾 bg-accent-soft」）实测全部 ≥ 4.5:1（4.62 ~ 10.17:1），
+ * primary red 薄雾 bg-accent-soft」）实测全部 ≥ 4.5:1（4.62 ~ 10.17:1），
  * normal 档底更浅、常规行更高。
  */
 const FESTIVAL_INK_LIGHT: string[] = [
-  '#C10C31', // ① Blaze 红   最坏叠底 4.62 / 白底 6.24
-  '#186E72', // ② Glint 青   最坏叠底 4.63 / 白底 5.98
-  '#6E6502', // ③ Glow 金    最坏叠底 4.62 / 白底 5.96
-  '#A52F99', // ④ Dawn 紫    最坏叠底 4.64 / 白底 6.06
-  '#574021', // ⑤ Muse taupe 最坏叠底 7.27 / 白底 9.72
-  '#601B5A', // ⑥ Dawn 深梅  最坏叠底 8.52 / 白底 11.66
-  '#0D3F41', // ⑦ Glint 深青 最坏叠底 8.53 / 白底 11.64
-  '#590606', // ⑧ Ember 栗（与底色同一支，本身就够深）最坏叠底 10.17 / 白底 14.45
+  '#C10C31', // ① primary red 红   最坏叠底 4.62 / 白底 6.24
+  '#186E72', // ② accent cyan 青   最坏叠底 4.63 / 白底 5.98
+  '#6E6502', // ③ highlight yellow 金    最坏叠底 4.62 / 白底 5.96
+  '#A52F99', // ④ soft pink 紫    最坏叠底 4.64 / 白底 6.06
+  '#574021', // ⑤ warm neutral taupe 最坏叠底 7.27 / 白底 9.72
+  '#601B5A', // ⑥ soft pink 深梅  最坏叠底 8.52 / 白底 11.66
+  '#0D3F41', // ⑦ accent cyan 深青 最坏叠底 8.53 / 白底 11.64
+  '#590606', // ⑧ deep red 栗（与底色同一支，本身就够深）最坏叠底 10.17 / 白底 14.45
 ];
 
 /**
- * 穆斯林节日绿字（浅色）：沿 Thrive 色相压深，与斋月绿 pill 底同源。
+ * 穆斯林节日绿字（浅色）：沿 deep green 色相压深，与斋月绿 pill 底同源。
  * 最坏叠底 4.66:1 / 白底 6.02:1。
  */
 const FESTIVAL_GREEN_INK_LIGHT = '#0C714E';
@@ -1647,8 +1588,8 @@ const FESTIVAL_NAME_ORDER: string[] = [
 ];
 
 /**
- * 穆斯林节日的绿色：深色取 Thrive 提亮档，
- * 浅色沿 Thrive 色相（159.2°）提亮到 #0F8B60（与日历斋月锚点同一支色）。
+ * 穆斯林节日的绿色：深色取 deep green 提亮档，
+ * 浅色沿 deep green 色相（159.2°）提亮到 #0F8B60（与日历斋月锚点同一支色）。
  */
 const FESTIVAL_GREEN_BY_MODE: Record<ThemeMode, string> = {
   dark: GREEN_SCALE[500],
@@ -1682,7 +1623,7 @@ function fallbackHue(name: string, mode: ThemeMode): string {
   return hues[hash % hues.length];
 }
 
-/** 节日名 → 品牌色相（穆斯林节日恒为绿色阶） */
+/** 节日名 → 界面色相（穆斯林节日恒为绿色阶） */
 export function festivalHue(nameCn: string, mode: ThemeMode = 'dark'): string {
   return FESTIVAL_HUE_MAP_BY_MODE[mode][nameCn] ?? fallbackHue(nameCn, mode);
 }
@@ -1690,7 +1631,7 @@ export function festivalHue(nameCn: string, mode: ThemeMode = 'dark'): string {
 /**
  * 浅色 pill 字色查表：hue → 提亮后的「最浅可读墨」。
  * 与 FESTIVAL_HUES_LIGHT 逐位对齐，绿色单独并入（key 用浅色绿 pill 底色相）。
- * 只服务浅色；深色字色仍在 festivalTagStyle 里按品牌规则往白提亮，不走这里。
+ * 只服务浅色；深色字色仍在 festivalTagStyle 里按界面规则往白提亮，不走这里。
  */
 const FESTIVAL_INK_BY_HUE_LIGHT: Record<string, string> = (() => {
   const map: Record<string, string> = {};
@@ -1709,7 +1650,7 @@ export type FestivalTagStyle = {
 };
 
 /**
- * 节日标签 pill 样式：半透明品牌色底 + 同色系文字 + 细描边。
+ * 节日标签 pill 样式：半透明界面色底 + 同色系文字 + 细描边。
  * 强关联（score = 3）比中等关联（score = 2）更「实」：底色与描边更不透明、字更粗。
  *
  * 深色：文字往白色提亮（底是深色）；
@@ -1741,7 +1682,7 @@ export function festivalTagStyle(
   return {
     background: withAlpha(hue, strong ? 0.28 : 0.12),
     borderColor: withAlpha(hue, strong ? 0.65 : 0.3),
-    color: mixHex(hue, BRAND.white, strong ? 0.3 : 0.5),
+    color: mixHex(hue, PALETTE.white, strong ? 0.3 : 0.5),
     fontWeight: strong ? 600 : 500,
   };
 }

@@ -93,7 +93,7 @@ function TopNPicker({
       </span>
       <input
         type="range"
-        className="range-brand w-[132px] shrink-0 sm:w-[160px]"
+        className="range-accent w-[132px] shrink-0 sm:w-[160px]"
         min={MIN_TOP_N}
         max={MAX_TOP_N}
         step={TOP_N_STEP}

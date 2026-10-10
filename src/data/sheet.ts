@@ -58,10 +58,7 @@ export type YearMonth = { year: number; month: number };
 
 const EXCEL_EPOCH_UTC = Date.UTC(1899, 11, 30);
 
-/**
- * p_date 解析。飞书 read_range 对日期格式单元格返回 Excel 序列号（45839），
- * 但同一列在别的表里也可能是 `2025年7月` 这类文本，两种都要认。
- */
+/** Parse either an Excel date serial or a localized year-month string. */
 export function parseYearMonth(value: JsonValue | undefined): YearMonth | null {
   if (typeof value === 'number' && Number.isFinite(value) && value > 20000) {
     const date = new Date(EXCEL_EPOCH_UTC + value * 86400000);
@@ -109,10 +106,8 @@ function toSheetDate(date: Date): SheetDate {
 }
 
 /**
- * 单个日期单元格解析（start_date / end_date 列用）。
- * 飞书 read_range 对「日期」格式单元格返回 Excel 序列号（46019），
- * 但同一列手工录入时也可能是 `2026-07-01` / `2026/7/1` / `2026年7月1日` 文本，
- * 三种形态都要认；只有年月（`2026年7月`）时落到当月 1 日。
+ * Parse a date cell from an Excel serial, ISO text or localized date text.
+ * A year-month value resolves to the first day of that month.
  */
 export function parseSheetDate(value: JsonValue | undefined): SheetDate | null {
   if (typeof value === 'number' && Number.isFinite(value) && value > 20000) {

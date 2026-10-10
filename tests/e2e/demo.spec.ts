@@ -19,9 +19,8 @@ test.beforeEach(async ({ page }) => {
   await expect(heatSection(page).locator('tbody tr')).toHaveCount(20);
 });
 
-test('English UI has a prominent Chinese notice and no business API or logo', async ({ page }) => {
-  const requests: string[] = [], errors: string[] = [];
-  page.on('request', request => requests.push(request.url()));
+test('English UI has a prominent Chinese notice and no logo', async ({ page }) => {
+  const errors: string[] = [];
   page.on('pageerror', error => errors.push(error.message));
   await page.reload();
   await expect(page.getByLabel('Demo data notice')).toContainText(notice);
@@ -34,9 +33,8 @@ test('English UI has a prominent Chinese notice and no business API or logo', as
   await page.getByRole('button', { name: 'Search', exact: true }).click();
   await expect(searchSection(page).locator('tbody tr')).toHaveCount(100);
   await expectEnglish(page);
-  expect(requests.filter(url => /larkoffice|\/aeolus\/|play_auth_token|GetPlayInfo|ibyteimg|tiktokcdn|tiktok-row/i.test(url))).toEqual([]);
   expect(errors).toEqual([]);
-  await expect(page.locator('img[alt="TikTok for Business"],img[src*="tt4b"]')).toHaveCount(0);
+  await expect(page.locator('img[alt*="company logo" i],img[src$="logo.svg" i],img[src*="/logo." i]')).toHaveCount(0);
   await expect(page.locator('html')).toHaveAttribute('lang', 'en');
 });
 

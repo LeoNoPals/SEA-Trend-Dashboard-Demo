@@ -33,7 +33,7 @@
   --surface-tooltip: rgba(13, 13, 13, 0.95);
   /* 浮层/弹层遮罩 */
   --scrim: rgba(0, 0, 0, 0.8);
-  /* 卡片投影：深色底上禁止投影（品牌规范），浅色底才需要 */
+  /* Dark surfaces use borders instead of shadows. */
   --card-shadow: none;
 
   /* 状态填充（原 white/0.03 → 0.25，序号越大越强） */
@@ -63,7 +63,7 @@
   --text-5: #737373;
   --text-6: #525252;
 
-  /* 品牌红 Blaze：实底 / hover / 实底上的文字 / 低强度底 / 红色文字 / 滚动条 */
+  /* Primary accent states. */
   --accent: #f1204a;
   --accent-hover: rgba(241, 32, 74, 0.85);
   --accent-fg: #ffffff;
@@ -72,13 +72,13 @@
   --accent-thumb: rgba(241, 32, 74, 0.75);
   --accent-ring: rgba(241, 32, 74, 0.6);
 
-  /* 信息角标（数据待接入等，Shimmer/Glint） */
+  /* Information states. */
   --info-fg: #baf6f0;
   --info-dot: #2dccd3;
   --info-border: rgba(45, 204, 211, 0.35);
   --info-bg: rgba(45, 204, 211, 0.1);
 
-  /* 失败提示（Blaze 低强度） */
+  /* Failure states. */
   --danger-border: rgba(241, 32, 74, 0.4);
   --danger-bg: rgba(241, 32, 74, 0.1);
 
@@ -101,23 +101,10 @@
   --heat-emph-saturate: 1.1;
 }
 
-/* ── 浅色（本版严格按 TT4B 官方色板重建） ─────────────────────────────────
-   规则：
-   1. 底色 / 填充 / 分割线 / 文字**只能是中性**（纯白 #FFFFFF、纯中性灰 R=G=B、
-      纯黑 #000000 的透明度），一律不染色相 —— 上一版这些值统一用了一支带蓝的
-      冷黑 rgba(15,18,25)（#0F1219，色相 220° 的蓝黑）与冷灰 #F7F7F8 / #F1F2F4 /
-      #5B5B62，品牌色板里既没有蓝也没有冷灰，这是「整屏发闷、隐隐发蓝」的来源；
-   2. 有色相的部分（accent / info / danger）**只能来自品牌色板**：
-      Blaze #F1204A（红）与 Glint #2DCCD3（青）—— 正好是官方 Hero Pairing；
-   3. 白底上的文字按 AA 4.5:1 卡，色块 / 描边 / 圆点按图形 3:1 卡。
-   ──────────────────────────────────────────────────────────────────────── */
+/* Light theme: neutral surfaces with accessible accent and information colors. */
 :root[data-theme='light'] {
   color-scheme: light;
 
-  /*
-    层级：页面浅中性灰 → 卡片 TikTok White → 表头灰，卡片靠「比页面更亮 +
-    极轻边框 + 一层几乎看不见的黑色投影」浮起来。三档全部 R=G=B（无色相）。
-  */
   --surface-page: #f5f5f5;
   --surface-card: #ffffff;
   --surface-inset: #efefef;
@@ -125,15 +112,9 @@
   --surface-overlay: #ffffff;
   --surface-card-soft: rgba(255, 255, 255, 0.85);
   --surface-tooltip: rgba(255, 255, 255, 0.96);
-  /* 遮罩：品牌原色 TikTok Black 45%（上一版是带蓝的 #0F1219） */
   --scrim: rgba(0, 0, 0, 0.45);
-  /* 卡片投影：品牌原色 TikTok Black 的极低透明度（上一版带蓝的 #101828） */
   --card-shadow: 0 1px 2px rgba(0, 0, 0, 0.05), 0 1px 3px rgba(0, 0, 0, 0.07);
 
-  /*
-    状态填充：**品牌原色 TikTok Black** 的低透明度（上一版是冷黑 15,18,25）。
-    透明度整体比深色版低（黑色叠白底的视觉重量高于白色叠黑底）。
-  */
   --fill-1: rgba(0, 0, 0, 0.025);
   --fill-2: rgba(0, 0, 0, 0.045);
   --fill-3: rgba(0, 0, 0, 0.07);
@@ -141,7 +122,6 @@
   --fill-5: rgba(0, 0, 0, 0.22);
   --fill-hover: rgba(0, 0, 0, 0.035);
 
-  /* 分割线 / 边框：同样是 TikTok Black 的低透明度，透明度档位与上一版一致 */
   --line-1: rgba(0, 0, 0, 0.05);
   --line-2: rgba(0, 0, 0, 0.07);
   --line-3: rgba(0, 0, 0, 0.09);
@@ -151,13 +131,6 @@
   --line-7: rgba(0, 0, 0, 0.18);
   --line-8: rgba(0, 0, 0, 0.34);
 
-  /*
-    文字 7 档，**全部纯中性**（上一版 7 档全部带蓝：#0F0F10~#94949C 的 B 通道
-    都比 R 高）。strong 直接用 **品牌原色 TikTok Black #000000**。
-    白底对比度：strong 21.0:1、1 16.1:1、2 12.5:1、3 9.6:1、4 6.9:1、5 5.0:1
-    —— 正文档位（4/5）都过 WCAG AA 4.5:1；6 为 3.0:1，只用在「待接入」这类
-    失效态与装饰文字（AA 大字档 / 图形档）。
-  */
   --text-strong: #000000;
   --text-1: #212121;
   --text-2: #343434;
@@ -166,15 +139,6 @@
   --text-5: #707070;
   --text-6: #949494;
 
-  /*
-    强调色 = 品牌原色 Blaze #F1204A 家族（浅色模式下所有可点元素、选中态、
-    focus 环、主题切换按钮都收口到这一支）：
-    - 实底 --accent 沿 Blaze 色相（347.9°）压深到 #E90F3B：白字 4.57:1 过 AA
-      （Blaze 原色配白字只有 4.16:1，按钮文案会不达标），观感仍是 TikTok 红；
-    - hover / 红色文字 --accent-text 再深一档 #BD0C30（白底 6.44:1）；
-    - 所有**半透明**档位（soft / thumb / ring）直接用 **Blaze 原色**加透明度
-      —— 薄雾叠白底本就会变浅，不需要预先压深。
-  */
   --accent: #e90f3b;
   --accent-hover: #bd0c30;
   --accent-fg: #ffffff;
@@ -183,25 +147,16 @@
   --accent-thumb: rgba(241, 32, 74, 0.7);
   --accent-ring: rgba(241, 32, 74, 0.55);
 
-  /*
-    信息角标 = 品牌原色 Glint #2DCCD3 家族（与 Blaze 构成官方 Hero Pairing）。
-    Glint 原色在白底只有 1.96:1，做不了文字与圆点，所以：
-    - 文字沿 182.5° 压深（info 6.06:1，过 AA）；
-    - 圆点是图形，压到 #1CA4A9（3.03:1，过图形门槛 3:1）；
-    - 底色 / 描边用 **Glint 原色**加透明度（薄雾）。
-    （原先并列的 LIVE 一组变量已随「LIVE 小标全删」一并移除。）
-  */
   --info-fg: #186d71;
   --info-dot: #1ca4a9;
   --info-border: rgba(45, 204, 211, 0.45);
   --info-bg: rgba(45, 204, 211, 0.12);
 
-  /* 失败提示：品牌原色 Blaze 低透明度 */
   --danger-border: rgba(241, 32, 74, 0.35);
   --danger-bg: rgba(241, 32, 74, 0.06);
 
   --sticky-fade: rgba(0, 0, 0, 0.1);
-  /* 浅底上纯色图例块（如 Glow 淡黄档）与白底对比不足，补一圈极细黑描边勾出边界 */
+  /* Light swatches use a subtle boundary against white surfaces. */
   --swatch-border: rgba(0, 0, 0, 0.16);
 
   --scrollbar-track: rgba(0, 0, 0, 0.06);
@@ -241,48 +196,7 @@
   }
 }
 
-/* ── TikTok for Business 品牌字体（TikTok Sans） ─────────────────────────── */
-@font-face {
-  font-family: 'TikTok Sans Display';
-  src: url('../assets/fonts/TikTok-Sans-Display-Bold.woff2') format('woff2');
-  font-weight: 700;
-  font-style: normal;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: 'TikTok Sans Display';
-  src: url('../assets/fonts/TikTok-Sans-Display-Medium.woff2') format('woff2');
-  font-weight: 500;
-  font-style: normal;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: 'TikTok Sans Text';
-  src: url('../assets/fonts/TikTok-Sans-Text-Regular.woff2') format('woff2');
-  font-weight: 400;
-  font-style: normal;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: 'TikTok Sans Text';
-  src: url('../assets/fonts/TikTok-Sans-Text-Medium.woff2') format('woff2');
-  font-weight: 500;
-  font-style: normal;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: 'TikTok Sans Text';
-  src: url('../assets/fonts/TikTok-Sans-Text-Bold.woff2') format('woff2');
-  font-weight: 700;
-  font-style: normal;
-  font-display: swap;
-}
-
-/* ── 中文品牌字体（思源黑体 CN，已子集化：GB2312 全字集 + 拉丁 + 中英标点） ──── */
+/* Open-source Chinese font subset used when the system font is unavailable. */
 @font-face {
   font-family: 'Source Han Sans CN';
   src: url('../assets/fonts/SourceHanSansCN-Regular.subset.woff2')
@@ -300,21 +214,16 @@
   font-display: swap;
 }
 
-/*
-  品牌字体栈：拉丁字符命中 TikTok Sans，中文按 fallback 落到思源黑体 CN，
-  思源黑体排在 PingFang SC 之前，保证 macOS 上中文也走品牌字体而不是系统字体。
-*/
 :root {
-  --brand-font: 'TikTok Sans Text', 'TikTok Sans Display', 'Source Han Sans CN',
-    'PingFang SC', 'Noto Sans SC', 'Hiragino Sans GB', 'Microsoft YaHei', Arial,
-    sans-serif;
+  --ui-font: 'Century Gothic', 'Source Han Sans CN', 'PingFang SC',
+    'Noto Sans SC', 'Hiragino Sans GB', 'Microsoft YaHei', Arial, sans-serif;
 }
 
 html,
 body {
   padding: 0;
   margin: 0;
-  font-family: var(--brand-font);
+  font-family: var(--ui-font);
 }
 
 /* 表单控件与 SVG 文本（Recharts 坐标轴 / 图例 / tooltip）不会自动继承，显式兜底 */
@@ -326,7 +235,7 @@ th,
 td,
 svg text,
 svg tspan {
-  font-family: var(--brand-font);
+  font-family: var(--ui-font);
 }
 
 p {
@@ -436,25 +345,25 @@ body {
 }
 
 /*
-  品牌滑杆（气泡图「气泡数量」用）：原生 input[type=range] 的默认外观在深色底上
+  气泡图数量滑杆：原生 input[type=range] 的默认外观在深色底上
   是一条灰白细线 + 系统蓝滑块，与页面完全脱节，所以这里自定义两套伪元素
   （WebKit / Firefox 各一套，写法不能合并）。
-  取舍：轨道保持**整条统一灰底**（不做左侧红色填充）——填充色会和滑块的品牌红
+  取舍：轨道保持**整条统一灰底**（不做左侧红色填充）——填充色会和滑块的强调色
   连成一片，反而看不清当前滑块位置；当前值本来就以数字形式写在滑杆左侧。
 */
-.range-brand {
+.range-accent {
   -webkit-appearance: none;
   appearance: none;
   height: 18px;
   background: transparent;
   cursor: pointer;
 }
-.range-brand::-webkit-slider-runnable-track {
+.range-accent::-webkit-slider-runnable-track {
   height: 6px;
   border-radius: 9999px;
   background: var(--fill-3);
 }
-.range-brand::-webkit-slider-thumb {
+.range-accent::-webkit-slider-thumb {
   -webkit-appearance: none;
   appearance: none;
   margin-top: -5px;
@@ -466,16 +375,16 @@ body {
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
   transition: transform 0.12s ease;
 }
-.range-brand:hover::-webkit-slider-thumb,
-.range-brand:focus-visible::-webkit-slider-thumb {
+.range-accent:hover::-webkit-slider-thumb,
+.range-accent:focus-visible::-webkit-slider-thumb {
   transform: scale(1.12);
 }
-.range-brand::-moz-range-track {
+.range-accent::-moz-range-track {
   height: 6px;
   border-radius: 9999px;
   background: var(--fill-3);
 }
-.range-brand::-moz-range-thumb {
+.range-accent::-moz-range-thumb {
   height: 16px;
   width: 16px;
   border: none;
@@ -483,10 +392,10 @@ body {
   background: var(--accent);
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
 }
-.range-brand:focus-visible {
+.range-accent:focus-visible {
   outline: none;
 }
-.range-brand:focus-visible::-moz-range-thumb {
+.range-accent:focus-visible::-moz-range-thumb {
   box-shadow: 0 0 0 3px var(--accent-soft);
 }
 

@@ -83,7 +83,7 @@ function DemoPlayer({ material }: { material: TopMaterial }) {
           value={time}
           onChange={event => setTime(Number(event.target.value))}
           aria-label="Demo playback progress"
-          className="range-brand w-full"
+          className="range-accent w-full"
         />
         <div className="flex items-center gap-3">
           <button type="button" className="demo-icon-button" aria-label={playing ? 'Pause demo' : 'Play demo'} onClick={toggle}>

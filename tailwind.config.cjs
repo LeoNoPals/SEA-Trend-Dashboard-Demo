@@ -5,9 +5,8 @@ module.exports = {
   theme: {
     extend: {
       fontFamily: {
-        // 拉丁走 TikTok Sans，中文落到思源黑体 CN（必须排在 PingFang SC 之前）
         sans: [
-          'TikTok Sans Text',
+          'Century Gothic',
           'Source Han Sans CN',
           'PingFang SC',
           'Noto Sans SC',
@@ -17,8 +16,7 @@ module.exports = {
           'sans-serif',
         ],
         display: [
-          'TikTok Sans Display',
-          'TikTok Sans Text',
+          'Century Gothic',
           'Source Han Sans CN',
           'PingFang SC',
           'Noto Sans SC',
@@ -46,7 +44,7 @@ module.exports = {
           - fill-1~5：状态填充由弱到强（底纹 / hover / 选中 / 高亮）
           - line-1~8：分割线与边框由细到实
           - fg / fg-1~6：文字由强到弱（fg 为标题级）
-          - accent：品牌红 Blaze 及其在两套主题下的实底 / 文字 / 低强度底
+          - accent：主强调色及其在两套主题下的实底 / 文字 / 低强度底
           - info / danger：信息角标、失败提示
         */
         page: 'var(--surface-page)',

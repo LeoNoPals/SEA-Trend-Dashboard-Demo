@@ -795,7 +795,7 @@ export function TrendOverlay({
                   animationEasing="ease-out"
                 />
               ))}
-              {/* TTL 主线：TikTok White 纯色、稍粗，末端一个实心点标出最新月 */}
+              {/* TTL 主线稍粗，末端用实心点标出最新月。 */}
               {visible.has('SEA') ? (
                 <Line
                   type="monotone"
@@ -897,7 +897,7 @@ export function TrendOverlay({
                       backgroundColor: color,
                       opacity: on ? 1 : 0.5,
                       /*
-                        选中态 chip 的底色是强调色（Blaze 系）：MY 的色点本身就是 Blaze，
+                        选中态 chip 的底色是强调色：MY 的色点本身使用同一强调色，
                         贴在同色底上会糊成一片，所以选中时统一勾一圈 --accent-fg（白）
                         —— 这条深浅两套主题一致，与白底可见性无关。
                         未选中态是纯原色色块，不加任何描边。
